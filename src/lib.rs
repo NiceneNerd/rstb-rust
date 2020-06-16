@@ -288,11 +288,27 @@ mod tests {
     }
 
     #[test]
+    fn edit_rstb() {
+        let buffer: Vec<u8> = read("test/ResourceSizeTable.product.srsizetable").unwrap();
+        let mut rstb = ResourceSizeTable::from_binary(buffer, crate::Endian::Big).unwrap();
+        rstb.set_size("Map/MainField/A-1/A-1_Dynamic.mubin", 666u32);
+        assert_eq!(
+            rstb.get_size("Map/MainField/A-1/A-1_Dynamic.mubin")
+                .unwrap(),
+            666
+        );
+        rstb.delete_entry("Map/MainField/A-1/A-1_Dynamic.mubin");
+        assert_eq!(
+            rstb.is_in_table("Map/MainField/A-1/A-1_Dynamic.mubin"),
+            false
+        )
+    }
+
+    #[test]
     fn binary_roundtrip() {
         let buffer: Vec<u8> = read("test/ResourceSizeTable.product.srsizetable").unwrap();
         let rstb = ResourceSizeTable::from_binary(buffer, crate::Endian::Big).unwrap();
         let binary = rstb.to_binary(crate::Endian::Big, false).unwrap();
-        println!("{:?}", binary.len());
         let new_rstb = ResourceSizeTable::from_binary(binary, crate::Endian::Big).unwrap();
         assert_eq!(
             new_rstb.is_in_table("Map/MainField/A-1/A-1_Dynamic.mubin"),
