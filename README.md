@@ -10,7 +10,7 @@ use rstb::{ResourceSizeTable, Endian};
 
 let buff: Vec<u8> = read("ResourceSizeTable.product.srsizetable").unwrap();
 // Read RSTB from data, automatically decompressing if yaz0 compressed
-let table: ResourceSizeTable = ResourceSizeTable::from_binary(buff, Endian::Big).unwrap();
+let mut table: ResourceSizeTable = ResourceSizeTable::from_binary(buff, Endian::Big).unwrap();
 // Set the size for a resource
 table.set_size("Map/MainField/A-1/A-1_Dynamic.mubin", 777u32);
 // Check the size
