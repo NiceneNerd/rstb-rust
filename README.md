@@ -1,6 +1,8 @@
 # BOTW resource size table (RSTB) library in Rust
 
 [![crates.io](https://img.shields.io/crates/v/rstb)](https://crates.io/crates/rstb)
+[![api](https://img.shields.io/badge/api-rustdoc-757575)](https://docs.rs/rstb/)
+[![license](https://img.shields.io/crates/l/rstb)](https://spdx.org/licenses/MIT.html)
 
 A quick and easy library for manipulating the resource size table (RSTB) from *The Legend of Zelda:
 Breath of the Wild* in Rust. Can edit an RSTB directly or convert to and from a JSON representation.
