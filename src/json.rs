@@ -1,4 +1,4 @@
-use crate::{AnyError, Header, ResourceSizeTable, DIGEST};
+use crate::{AnyError, Endian, Header, ResourceSizeTable, DIGEST};
 use crc::Hasher32;
 use indexmap::IndexMap;
 use serde_derive::{Deserialize, Serialize};
@@ -91,6 +91,29 @@ impl Into<ResourceSizeTable> for JsonRstb {
 }
 
 impl ResourceSizeTable {
+    /// Creates a new, blank RSTB. Probably not very useful, to be honest.
+    pub fn new() -> ResourceSizeTable {
+        ResourceSizeTable {
+            header: Some(crate::Header {
+                crc_table_size: 0,
+                name_table_size: 0,
+            }),
+            crc_entries: IndexMap::new(),
+            name_entries: IndexMap::new(),
+        }
+    }
+
+    /// Creates a new copy of a stock BOTW RSTB. Passing `Endian::Big` will return the RSTB from
+    /// the 1.5.0 Wii U version, and passing `Endian::Little` will return the RSTB from the 1.6.0
+    /// Switch version.
+    pub fn new_from_stock(endian: Endian) -> ResourceSizeTable {
+        let json_rstb: JsonRstb = match endian {
+            Endian::Big => serde_json::from_str(WIIU_DATA).unwrap(),
+            Endian::Little => serde_json::from_str(SWITCH_DATA).unwrap(),
+        };
+        json_rstb.into()
+    }
+
     /// Creates a text representation of an RSTB as a JSON string.
     pub fn to_text(&self) -> Result<String, AnyError> {
         let table = JsonRstb::from(self);

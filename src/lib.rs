@@ -342,6 +342,17 @@ mod tests {
     }
 
     #[test]
+    fn test_stock() {
+        let table = ResourceSizeTable::new_from_stock(Endian::Little);
+        assert_eq!(
+            table
+                .get_size("Map/MainField/A-1/A-1_Dynamic.mubin")
+                .unwrap(),
+            48960
+        )
+    }
+
+    #[test]
     fn calc_sizes() {
         let buffer: Vec<u8> = read("test/ActorInfo.product.sbyml").unwrap();
         assert_eq!(
