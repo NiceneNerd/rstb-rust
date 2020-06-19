@@ -1,7 +1,7 @@
 # BOTW resource size table (RSTB) library in Rust
 
 [![crates.io](https://img.shields.io/crates/v/rstb)](https://crates.io/crates/rstb)
-[![api](https://img.shields.io/badge/api-rustdoc-757575)](https://docs.rs/rstb/)
+[![api](https://img.shields.io/badge/api-rustdoc-558b2f)](https://docs.rs/rstb/)
 [![license](https://img.shields.io/crates/l/rstb)](https://spdx.org/licenses/MIT.html)
 
 A quick and easy library for manipulating the resource size table (RSTB) from *The Legend of Zelda:
@@ -37,7 +37,7 @@ use rstb::calc::*;
 // Calculate RSTB value for file on disk
 assert_eq!(
     calculate_size(
-        "A-1_Dynamic.mubin",
+        "A-1_Dynamic.smubin",
         Endian::Big,
         false
     ).unwrap()
