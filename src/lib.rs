@@ -359,9 +359,10 @@ mod tests {
             calc::calculate_size_with_ext(&buffer, ".sbyml", Endian::Big, false).unwrap(),
             1964004
         );
-        let buffer: Vec<u8> = read("test/AirOcta_Tag.sbactorpack").unwrap();
         assert_eq!(
-            calc::calculate_size_with_ext(&buffer, ".sbactorpack", Endian::Big, false).unwrap(),
+            calc::calculate_size("test/AirOcta_Tag.sbactorpack", Endian::Big, false)
+                .unwrap()
+                .unwrap(),
             6016
         );
         let buffer: Vec<u8> = read("test/Enemy_Bokoblin_Gold.bdmgparam").unwrap();
@@ -379,5 +380,23 @@ mod tests {
             calc::calculate_size_with_ext(&buffer, ".sarc", Endian::Big, false).unwrap(),
             2801216
         );
+    }
+
+    #[test]
+    fn guess_sizes() {
+        let buffer: Vec<u8> = read("test/Armor.baiprog").unwrap();
+        assert_eq!(
+            calc::guess_size(buffer.len(), Endian::Little, ".baiprog").unwrap() >= 8216,
+            true
+        );
+        assert_eq!(
+            calc::guess_bfres_value_from_file(
+                "test/FldObj_TreeRootTropical_A_Far.sbfres",
+                Endian::Big
+            )
+            .unwrap()
+                >= 137816,
+            true
+        )
     }
 }

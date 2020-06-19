@@ -1,3 +1,33 @@
+//! Provides functions for calculating or estimating resource size values.
+//!
+//! Sample usage:
+//! ```
+//! use std::fs::read;
+//! use rstb::calc::*;
+//! // Calculate RSTB value for file on disk
+//! assert_eq!(
+//!     calculate_size(
+//!         "A-1_Dynamic.smubin",
+//!         Endian::Big,
+//!         false
+//!     ).unwrap()
+//!         .unwrap(),
+//!     48800
+//! );
+//!
+//! // Or we can calculate from a buffer if we provide the file extension
+//! let buf: Vec<u8> = read("A-1_Dynamic.smubin").unwrap();
+//! assert_eq!(
+//!     calculate_size_with_ext(
+//!         &buf,
+//!         ".smubin",
+//!         Endian::Big,
+//!         false
+//!     ).unwrap(),
+//!     48800
+//! );
+//! ```
+
 use crate::{AnyError, Endian};
 use serde_derive::Deserialize;
 use std::collections::HashMap;
@@ -6,7 +36,10 @@ use std::io::Cursor;
 use std::path::Path;
 use yaz0::header::Yaz0Header;
 
-static FACTORY_DATA: &str = include_str!("../data/factory_table.tsv");
+mod guess;
+pub use guess::{guess_bfres_value_from_file, guess_bfres_value_from_size, guess_size};
+
+static FACTORY_DATA: &str = include_str!("../../data/factory_table.tsv");
 
 #[derive(Debug, Deserialize)]
 struct FactoryParseRow {
@@ -43,16 +76,16 @@ struct FactoryInfo {
 /// Returns a Result of an Option containing the resource value or None if the size cannot be
 /// calculated, or an IO/filesystem error.
 pub fn calculate_size<P: AsRef<Path>>(
-    file: &P,
+    file: P,
     endian: Endian,
     guess: bool,
 ) -> Result<Option<u32>, AnyError> {
-    let path: &Path = file.as_ref();
-    let data = read(path)?;
+    let data = read(&file)?;
     Ok(calculate_size_with_ext(
         &data,
-        path.extension()
-            .ok_or(format!("No file extension for {:?}", path))?
+        file.as_ref()
+            .extension()
+            .ok_or(format!("No file extension for {:?}", file.as_ref()))?
             .to_str()
             .ok_or("Extension couldn\'t be converted to string?")?,
         endian,
@@ -65,7 +98,8 @@ pub fn calculate_size<P: AsRef<Path>>(
 /// `endian` parameter should be specified as `Big` for Wii U and `Little` for Switch even if the
 /// file type itself always uses the same endianness (e.g. AAMP files are always little endian).
 ///
-/// Returns `None` if no value can be calculated.
+/// Returns `None` if no value can be calculated. **This function always returns `None` for BFRES
+/// files**. Use `guess_bfres_size()` to handle BFRES files.
 pub fn calculate_size_with_ext(data: &[u8], ext: &str, endian: Endian, guess: bool) -> Option<u32> {
     let actual_ext = match ext {
         ".sarc" | "sarc" => "sarc",
@@ -73,20 +107,20 @@ pub fn calculate_size_with_ext(data: &[u8], ext: &str, endian: Endian, guess: bo
             true => &ext[2..],
             false => match ext.starts_with(".") {
                 true => &ext[1..],
-                false => &ext,
+                false => match ext.starts_with("s") {
+                    true => &ext[1..],
+                    false => &ext,
+                },
             },
         },
     };
+    println!("{}", actual_ext);
     let info: &FactoryInfo = match FACTORY_INFO_TABLE.get(actual_ext) {
         Some(i) => i,
         None => FACTORY_INFO_TABLE.get("*").unwrap(),
     };
-    if info.is_complex {
-        if guess {
-            return None;
-        } else {
-            return None;
-        }
+    if info.is_complex && !guess {
+        return None;
     }
     let mut size: usize = match &data[0..4] {
         b"Yaz0" => {
@@ -98,6 +132,9 @@ pub fn calculate_size_with_ext(data: &[u8], ext: &str, endian: Endian, guess: bo
         }
         _ => data.len(),
     };
+    if info.is_complex && guess {
+        return guess_size(size, endian, actual_ext);
+    }
     size = ((size as isize + 31) & -32) as usize;
     size += match endian {
         Endian::Big => {
