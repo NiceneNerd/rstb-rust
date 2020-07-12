@@ -35,8 +35,8 @@ lazy_static::lazy_static! {
     };
 }
 
-fn hash_to_name(crc: &u32) -> String {
-    match STOCK_NAMES.get(crc) {
+fn hash_to_name(crc: u32) -> String {
+    match STOCK_NAMES.get(&crc) {
         Some(s) => s.to_owned(),
         None => crc.to_string(),
     }
@@ -54,7 +54,7 @@ impl From<&ResourceSizeTable> for JsonRstb {
             hash_map: rstb
                 .crc_entries
                 .iter()
-                .map(|(k, v)| (hash_to_name(k), *v))
+                .map(|(k, v)| (hash_to_name(*k), *v))
                 .collect(),
             name_map: rstb.name_entries.clone(),
         }

@@ -94,7 +94,7 @@ struct WriteNameEntry {
     size: u32,
 }
 
-#[derive(BinRead, Debug, PartialEq)]
+#[derive(BinRead, Debug, PartialEq, Default)]
 #[br(import(filesize: usize))]
 /// A representation of a Breath of the Wild Resource Size Table (RSTB) file
 pub struct ResourceSizeTable {
@@ -156,15 +156,17 @@ impl From<&ResourceSizeTable> for WriteRstb {
 impl ResourceSizeTable {
     /// Parses an RSTB file from a buffer implementing `Into<Vec<u8>>` using the specified
     /// endianness. If the data is yaz0 compressed, it will be decompressed automatically.
-    pub fn from_binary<I: Into<Vec<u8>>>(
-        data: I,
+    pub fn from_binary<B: AsRef<[u8]>>(
+        data: B,
         endian: Endian,
     ) -> Result<ResourceSizeTable, AnyError> {
-        let mut data = data.into();
+        let mut data = data.as_ref();
+        let dec: Vec<u8>;
         if &data[..4] == b"Yaz0" {
             let mut reader: Cursor<Vec<u8>> = Cursor::new(data.into());
             let mut yaz = Yaz0Archive::new(&mut reader)?;
-            data = yaz.decompress()?;
+            dec = yaz.decompress()?;
+            data = dec.as_ref();
         };
         let data_len = data.len();
         let mut reader = Cursor::new(data);
@@ -194,7 +196,7 @@ impl ResourceSizeTable {
         if compress {
             let mut yaz_buf: Vec<u8> = vec![];
             let yaz = yaz0::deflate::Yaz0Writer::new(&mut yaz_buf);
-            yaz.compress_and_write(&mut buf, yaz0::CompressionLevel::Naive { quality: 7 })?;
+            yaz.compress_and_write(&buf, yaz0::CompressionLevel::Naive { quality: 7 })?;
             buf = yaz_buf;
         }
         Ok(buf)
@@ -212,10 +214,8 @@ impl ResourceSizeTable {
     /// Checks whether a file has an entry in the RSTB. Checks the CRC table first and then the name
     /// table.
     pub fn is_in_table(&self, file: &str) -> bool {
-        match self.crc_entries.contains_key(&hash(file)) {
-            true => true,
-            false => self.name_entries.contains_key(&file.to_string()),
-        }
+        self.crc_entries.contains_key(&hash(file))
+            || self.name_entries.contains_key(&file.to_string())
     }
 
     /// Sets the resource size of a file in the RSTB, adding an entry if one is not already present.
@@ -223,9 +223,8 @@ impl ResourceSizeTable {
     pub fn set_size<I: Into<u32>>(&mut self, file: &str, size: I) {
         let old = self.crc_entries.insert(hash(file), size.into());
         if old.is_some() {
-            match self.header.as_mut() {
-                Some(h) => h.crc_table_size += 1,
-                None => (),
+            if let Some(h) = self.header.as_mut() {
+                h.crc_table_size += 1
             }
         }
     }
@@ -234,17 +233,16 @@ impl ResourceSizeTable {
     /// table first and then the name table.
     pub fn delete_entry(&mut self, file: &str) {
         match self.crc_entries.remove(&hash(file)) {
-            Some(..) => match self.header.as_mut() {
-                Some(h) => h.crc_table_size -= 1,
-                None => (),
-            },
+            Some(..) => {
+                if let Some(h) = self.header.as_mut() {
+                    h.crc_table_size -= 1
+                }
+            }
             None => {
-                match self.name_entries.remove(file) {
-                    Some(..) => match self.header.as_mut() {
-                        Some(h) => h.crc_table_size -= 1,
-                        None => (),
-                    },
-                    None => (),
+                if let Some(..) = self.name_entries.remove(file) {
+                    if let Some(h) = self.header.as_mut() {
+                        h.crc_table_size -= 1
+                    }
                 };
             }
         };
@@ -357,7 +355,7 @@ mod tests {
         let buffer: Vec<u8> = read("test/ActorInfo.product.sbyml").unwrap();
         assert_eq!(
             calc::calculate_size_with_ext(&buffer, ".sbyml", Endian::Big, false).unwrap(),
-            1964004
+            1_964_004
         );
         assert_eq!(
             calc::calculate_size("test/AirOcta_Tag.sbactorpack", Endian::Big, false)
@@ -378,7 +376,7 @@ mod tests {
         let buffer: Vec<u8> = read("test/savedataformat.ssarc").unwrap();
         assert_eq!(
             calc::calculate_size_with_ext(&buffer, ".sarc", Endian::Big, false).unwrap(),
-            2801216
+            2_801_216
         );
     }
 
@@ -395,7 +393,7 @@ mod tests {
                 Endian::Big
             )
             .unwrap()
-                >= 137816,
+                >= 137_816,
             true
         )
     }

@@ -103,16 +103,15 @@ pub fn calculate_size<P: AsRef<Path>>(
 pub fn calculate_size_with_ext(data: &[u8], ext: &str, endian: Endian, guess: bool) -> Option<u32> {
     let actual_ext = match ext {
         ".sarc" | "sarc" => "sarc",
-        _ => match ext.starts_with(".s") {
-            true => &ext[2..],
-            false => match ext.starts_with(".") {
-                true => &ext[1..],
-                false => match ext.starts_with("s") {
-                    true => &ext[1..],
-                    false => &ext,
-                },
-            },
-        },
+        _ => {
+            if ext.starts_with(".s") {
+                &ext[2..]
+            } else if ext.starts_with('.') || ext.starts_with('s') {
+                &ext[1..]
+            } else {
+                &ext
+            }
+        }
     };
     println!("{}", actual_ext);
     let info: &FactoryInfo = match FACTORY_INFO_TABLE.get(actual_ext) {

@@ -1,3 +1,4 @@
+#![allow(clippy::unreadable_literal)]
 use crate::{AnyError, Endian};
 use std::fs::read;
 use std::io::Cursor;
@@ -9,7 +10,7 @@ use yaz0::Yaz0Header;
 pub fn guess_size(filesize: usize, endian: Endian, ext: &str) -> Option<u32> {
     let actual_ext = if ext.starts_with(".s") {
         &ext[2..]
-    } else if ext.starts_with(".") {
+    } else if ext.starts_with('.') {
         &ext[1..]
     } else {
         &ext
