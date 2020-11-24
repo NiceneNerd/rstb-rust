@@ -19,6 +19,7 @@ type AnyError = Box<dyn Error>;
 /// Specifies endianness for RSTB operations. Note that, with the RSTB value calculator functions,
 /// even files that only come in one endianness (e.g. AAMP files are always little endian) should
 /// be specified as Big for Wii U and Little for Switch.
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Endian {
     Big,
     Little,
