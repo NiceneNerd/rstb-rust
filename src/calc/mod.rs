@@ -103,17 +103,17 @@ pub fn calculate_size<P: AsRef<Path>>(
 pub fn calculate_size_with_ext(data: &[u8], ext: &str, endian: Endian, guess: bool) -> Option<u32> {
     let actual_ext = match ext {
         ".sarc" | "sarc" => "sarc",
-        _ => {
-            if ext.starts_with(".s") {
-                &ext[2..]
-            } else if ext.starts_with('.') || ext.starts_with('s') {
-                &ext[1..]
-            } else {
-                &ext
+        _ => match ext.strip_prefix(".s") {
+            Some(s) => s,
+            None => {
+                if ext.starts_with('.') || ext.starts_with('s') {
+                    &ext[1..]
+                } else {
+                    &ext
+                }
             }
-        }
+        },
     };
-    println!("{}", actual_ext);
     let info: &FactoryInfo = match FACTORY_INFO_TABLE.get(actual_ext) {
         Some(i) => i,
         None => FACTORY_INFO_TABLE.get("*").unwrap(),
@@ -162,11 +162,11 @@ lazy_static::lazy_static! {
                 size_nx: row.size_nx,
                 size_wiiu: row.size_wiiu,
                 alignment: row.alignment,
-                parse_size_nx: match parse_int::parse::<usize>(&row.parse_size_nx) { Ok(s) => s, Err(_) => 0 },
-                parse_size_wiiu: match parse_int::parse::<usize>(&row.parse_size_wiiu) { Ok(s) => s, Err(_) => 0 },
+                parse_size_nx: parse_int::parse::<usize>(&row.parse_size_nx).unwrap_or(0),
+                parse_size_wiiu: parse_int::parse::<usize>(&row.parse_size_wiiu).unwrap_or(0),
                 multiplier: row.multiplier,
                 constant: row.constant,
-                is_complex: match row.parse_size_nx.as_str() {"COMPLEX" => true, _ => false}
+                is_complex: matches!(row.parse_size_nx.as_str(), "COMPLEX")
             };
             for other_ext in row.other_extensions.split(", ") {
                 map.insert(other_ext.to_string(), info.clone());

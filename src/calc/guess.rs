@@ -8,12 +8,12 @@ use yaz0::Yaz0Header;
 /// Estimates the resource size for complex resource types, excluding BFRES. Returns `None` if no
 /// estimate is available.
 pub fn guess_size(filesize: usize, endian: Endian, ext: &str) -> Option<u32> {
-    let actual_ext = if ext.starts_with(".s") {
-        &ext[2..]
-    } else if ext.starts_with('.') {
-        &ext[1..]
-    } else {
-        &ext
+    let actual_ext = match ext.strip_prefix(".s") {
+        Some(s) => s,
+        None => match ext.strip_prefix('.') {
+            Some(s) => s,
+            None => ext,
+        },
     };
     let size = match actual_ext {
         "baiprog" => guess_baiprog(filesize),

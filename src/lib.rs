@@ -1,3 +1,4 @@
+#![allow(clippy::field_reassign_with_default)]
 use binread::BinRead;
 use binwrite::BinWrite;
 use cached::proc_macro::cached;
