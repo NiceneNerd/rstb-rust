@@ -65,7 +65,7 @@ impl TryFrom<binwrite::Endian> for Endian {
     }
 }
 
-#[derive(BinRead, Debug, PartialEq)]
+#[derive(BinRead, Debug, PartialEq, Clone)]
 #[binread(magic = b"RSTB")]
 struct Header {
     crc_table_size: u32,
@@ -83,7 +83,7 @@ struct NameEntry {
     #[br(
         count = 128,
         map = |x: Vec<u8>|
-            String::from_utf8(x).unwrap().trim_right_matches(char::from(0)).to_owned()
+            String::from_utf8(x).unwrap().trim_end_matches(char::from(0)).to_owned()
     )]
     name: String,
     size: u32,
@@ -96,7 +96,7 @@ struct WriteNameEntry {
     size: u32,
 }
 
-#[derive(BinRead, Debug, PartialEq, Default)]
+#[derive(BinRead, Debug, PartialEq, Default, Clone)]
 #[br(import(filesize: usize))]
 /// A representation of a Breath of the Wild Resource Size Table (RSTB) file
 pub struct ResourceSizeTable {
