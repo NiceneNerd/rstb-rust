@@ -1,6 +1,6 @@
 [package]
 name = "rstb"
-version = "0.1.4"
+version = "0.1.5"
 description = "Rust library for manipulating Breath of the Wild's resource size table"
 documentation = "https://docs.rs/rstb"
 repository = "https://github.com/NiceneNerd/rstb-rust"
@@ -12,15 +12,15 @@ authors = ["Caleb Smith <macadamiadaze@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-binread = "1.4.1"
+binread = "2.1.1"
 binwrite = "0.2.1"
-cached = "0.20.0"
+cached = "0.23.0"
 crc = "1.8.1"
-csv = "1.1.4"
-indexmap = { version = "1.6.0", features = ["serde-1"] }
+csv = "1.1.6"
+indexmap = { version = "1.6.2", features = ["serde-1"] }
 lazy_static = "1.4.0"
-parse_int = "0.4.0"
-serde = { version = "1.0.117", features = ["derive"] }
-serde_derive = "1.0.117"
-serde_json = "1.0.59"
-yaz0 = "0.1.2"
+parse_int = "0.5.0"
+serde = { version = "1.0.126", features = ["derive"] }
+serde_derive = "1.0.126"
+serde_json = "1.0.64"
+yaz0 = "0.3.0"
