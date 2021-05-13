@@ -204,6 +204,16 @@ impl ResourceSizeTable {
         Ok(buf)
     }
 
+    /// Iterates entries in the RSTB's name table.
+    pub fn name_entries(&self) -> indexmap::map::Iter<String, u32> {
+        self.name_entries.iter()
+    }
+
+    /// Iterates entries in the RSTB's CRC table.
+    pub fn hash_entries(&self) -> indexmap::map::Iter<u32, u32> {
+        self.crc_entries.iter()
+    }
+
     /// Attempts to retrieve the resource size of a file in the RSTB, returning None if there
     /// is no entry for the file. Checks the CRC table first and then the name table.
     pub fn get_size(&self, file: &str) -> Option<u32> {
