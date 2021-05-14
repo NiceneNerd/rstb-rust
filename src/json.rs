@@ -1,4 +1,4 @@
-use crate::{AnyError, Endian, Header, ResourceSizeTable, DIGEST};
+use crate::{Result, Endian, Header, ResourceSizeTable, DIGEST};
 use crc::Hasher32;
 use indexmap::IndexMap;
 use serde_derive::{Deserialize, Serialize};
@@ -9,7 +9,9 @@ static WIIU_DATA: &str = include_str!("../data/wiiu.json");
 static SWITCH_DATA: &str = include_str!("../data/switch.json");
 
 lazy_static::lazy_static! {
-    static ref STOCK_NAMES: HashMap<u32, String> = {
+    /// A hash table of vanilla BOTW resource hash values and
+    /// their corresponding canonical paths.
+    pub static ref STOCK_NAMES: HashMap<u32, String> = {
         let wiiu: Value = serde_json::from_str(WIIU_DATA).unwrap();
         let switch: Value = serde_json::from_str(SWITCH_DATA).unwrap();
         wiiu.as_object()
@@ -35,7 +37,10 @@ lazy_static::lazy_static! {
     };
 }
 
-fn hash_to_name(crc: u32) -> String {
+/// Creates a string representation of an entry hash. If the hash is in the default
+/// hash table, the canonical path is returned. Otherwise the hash is converted to 
+/// string.
+pub fn string_from_hash(crc: u32) -> String {
     match STOCK_NAMES.get(&crc) {
         Some(s) => s.to_owned(),
         None => crc.to_string(),
@@ -54,7 +59,7 @@ impl From<&ResourceSizeTable> for JsonRstb {
             hash_map: rstb
                 .crc_entries
                 .iter()
-                .map(|(k, v)| (hash_to_name(*k), *v))
+                .map(|(k, v)| (string_from_hash(*k), *v))
                 .collect(),
             name_map: rstb.name_entries.clone(),
         }
@@ -115,13 +120,13 @@ impl ResourceSizeTable {
     }
 
     /// Creates a text representation of an RSTB as a JSON string.
-    pub fn to_text(&self) -> Result<String, AnyError> {
+    pub fn to_text(&self) -> Result<String> {
         let table = JsonRstb::from(self);
         Ok(serde_json::to_string_pretty(&table)?)
     }
 
     /// Reads an RSTB from a JSON representation.
-    pub fn from_text(text: &str) -> Result<ResourceSizeTable, AnyError> {
+    pub fn from_text(text: &str) -> Result<ResourceSizeTable> {
         let table: JsonRstb = serde_json::from_str(text)?;
         Ok(table.into())
     }

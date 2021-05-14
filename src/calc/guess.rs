@@ -1,5 +1,5 @@
 #![allow(clippy::unreadable_literal)]
-use crate::{AnyError, Endian};
+use crate::{Endian, Error, Result};
 use std::fs::read;
 use std::io::Cursor;
 use std::path::Path;
@@ -35,10 +35,7 @@ pub fn guess_size(filesize: usize, endian: Endian, ext: &str) -> Option<u32> {
 
 /// Estimates the resource size for BFRES files on the file system. Returns a `Result` with the
 /// estimated resource size or an IO/file system error.
-pub fn guess_bfres_value_from_file<P: AsRef<Path>>(
-    file: P,
-    endian: Endian,
-) -> Result<u32, AnyError> {
+pub fn guess_bfres_value_from_file<P: AsRef<Path>>(file: P, endian: Endian) -> Result<u32> {
     let data = read(&file)?;
     let filesize = match &data[0..4] {
         b"Yaz0" => {
@@ -56,9 +53,13 @@ pub fn guess_bfres_value_from_file<P: AsRef<Path>>(
         endian,
         file.as_ref()
             .file_name()
-            .ok_or("Problem parsing file name")?
+            .ok_or_else(|| {
+                Error::InvalidFilenameError(file.as_ref().to_string_lossy().to_string())
+            })?
             .to_str()
-            .ok_or("Problem parsing file name")?,
+            .ok_or_else(|| {
+                Error::InvalidFilenameError(file.as_ref().to_string_lossy().to_string())
+            })?,
     ))
 }
 

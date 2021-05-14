@@ -28,7 +28,7 @@
 //! );
 //! ```
 
-use crate::{AnyError, Endian};
+use crate::{Endian, Error, Result};
 use serde_derive::Deserialize;
 use std::collections::HashMap;
 use std::fs::read;
@@ -75,19 +75,31 @@ struct FactoryInfo {
 ///
 /// Returns a Result of an Option containing the resource value or None if the size cannot be
 /// calculated, or an IO/filesystem error.
-pub fn calculate_size<P: AsRef<Path>>(
-    file: P,
-    endian: Endian,
-    guess: bool,
-) -> Result<Option<u32>, AnyError> {
+pub fn calculate_size<P: AsRef<Path>>(file: P, endian: Endian, guess: bool) -> Result<Option<u32>> {
     let data = read(&file)?;
     Ok(calculate_size_with_ext(
         &data,
         file.as_ref()
             .extension()
-            .ok_or(format!("No file extension for {:?}", file.as_ref()))?
+            .ok_or_else(|| {
+                Error::InvalidExtError(
+                    file.as_ref()
+                        .file_name()
+                        .unwrap()
+                        .to_string_lossy()
+                        .to_string(),
+                )
+            })?
             .to_str()
-            .ok_or("Extension couldn\'t be converted to string?")?,
+            .ok_or_else(|| {
+                Error::InvalidExtError(
+                    file.as_ref()
+                        .file_name()
+                        .unwrap()
+                        .to_string_lossy()
+                        .to_string(),
+                )
+            })?,
         endian,
         guess,
     ))

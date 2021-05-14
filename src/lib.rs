@@ -6,15 +6,33 @@ use cached::UnboundCache;
 use crc::{crc32, Hasher32};
 use indexmap::IndexMap;
 use std::convert::TryFrom;
-use std::error::Error;
 use std::io::{Cursor, Write};
 use std::sync::Mutex;
+use thiserror::Error;
 use yaz0::inflate::Yaz0Archive;
 
 pub mod calc;
 mod json;
 
-type AnyError = Box<dyn Error>;
+type Result<T> = std::result::Result<T, Error>;
+
+/// Error enum for this crate
+#[derive(Debug, Error)]
+pub enum Error {
+    #[error("Binary RSTB could not be parsed: {0}")]
+    ParseError(#[from] binread::Error),
+    #[error("Invalid or missing extension in file: {0}")]
+    InvalidExtError(String),
+    #[error("Invalid filename: {0}")]
+    InvalidFilenameError(String),
+    #[error("JSON parsing error: {0}")]
+    JsonError(#[from] serde_json::Error),
+    #[error("Yaz0 decompression failed: {0}")]
+    Yaz0Error(#[from] yaz0::Error),
+    #[error("I/O error: {0}")]
+    IOError(#[from] std::io::Error)
+}
+
 
 /// Specifies endianness for RSTB operations. Note that, with the RSTB value calculator functions,
 /// even files that only come in one endianness (e.g. AAMP files are always little endian) should
@@ -36,7 +54,7 @@ impl Into<binread::Endian> for Endian {
 
 impl TryFrom<binread::Endian> for Endian {
     type Error = &'static str;
-    fn try_from(endian: binread::Endian) -> Result<Endian, Self::Error> {
+    fn try_from(endian: binread::Endian) -> std::result::Result<Endian, Self::Error> {
         match endian {
             binread::Endian::Big => Ok(Endian::Big),
             binread::Endian::Little => Ok(Endian::Little),
@@ -56,7 +74,7 @@ impl Into<binwrite::Endian> for Endian {
 
 impl TryFrom<binwrite::Endian> for Endian {
     type Error = &'static str;
-    fn try_from(endian: binwrite::Endian) -> Result<Endian, Self::Error> {
+    fn try_from(endian: binwrite::Endian) -> std::result::Result<Endian, Self::Error> {
         match endian {
             binwrite::Endian::Big => Ok(Endian::Big),
             binwrite::Endian::Little => Ok(Endian::Little),
@@ -161,7 +179,7 @@ impl ResourceSizeTable {
     pub fn from_binary<B: AsRef<[u8]>>(
         data: B,
         endian: Endian,
-    ) -> Result<ResourceSizeTable, AnyError> {
+    ) -> Result<ResourceSizeTable> {
         let mut data = data.as_ref();
         let dec: Vec<u8>;
         if &data[..4] == b"Yaz0" {
@@ -183,7 +201,7 @@ impl ResourceSizeTable {
 
     /// Writes the contents of an RSTB to a binary writer implementing `Write`. Does not yaz0
     /// compress, this is left to the user.
-    pub fn write_binary<W: Write>(&self, writer: &mut W, endian: Endian) -> Result<(), AnyError> {
+    pub fn write_binary<W: Write>(&self, writer: &mut W, endian: Endian) -> Result<()> {
         let write_rstb: WriteRstb = WriteRstb::from(self);
         let mut opts = binwrite::WriterOption::default();
         opts.endian = endian.into();
@@ -192,7 +210,7 @@ impl ResourceSizeTable {
     }
 
     /// Writes the binary content of an RSTB as `Vec<u8>`, optionally with yaz0 compression.
-    pub fn to_binary(&self, endian: Endian, compress: bool) -> Result<Vec<u8>, AnyError> {
+    pub fn to_binary(&self, endian: Endian, compress: bool) -> Result<Vec<u8>> {
         let mut buf: Vec<u8> = vec![];
         self.write_binary(&mut buf, endian)?;
         if compress {
