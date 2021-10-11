@@ -85,23 +85,15 @@ pub fn guess_bfres_value_from_size(filesize: usize, endian: Endian, name: &str) 
 }
 
 fn guess_baiprog(filesize: usize) -> f32 {
-    let mut value = filesize as f32;
-    if filesize > 1750 {
-        value *= 3.0;
-    } else if filesize > 1000 {
-        value *= 3.5
-    } else if filesize > 600 {
-        value *= 4.0
-    } else if filesize > 450 {
-        value *= 5.0
-    } else if filesize > 400 {
-        value *= 5.5
-    } else if filesize > 380 {
-        value *= 6.0
-    } else {
-        value *= 7.0
-    }
-    value
+    filesize as f32 * (match filesize {
+        0..=380 => 7.0,
+        381..=400 => 6.0,
+        401..=450 => 5.5,
+        451..=600 => 5.0,
+        601..=1000 => 4.0,
+        1001..=1750 => 3.5,
+        _ => 3.0
+    })
 }
 
 fn guess_bgparamlist(filesize: usize) -> f32 {
