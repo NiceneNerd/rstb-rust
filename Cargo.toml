@@ -1,0 +1,20 @@
+[package]
+name = "rstb"
+version = "0.3.0"
+edition = "2021"
+
+[dependencies]
+crc = "2.1.0"
+lazy_static = { version = "1.4.0", optional = true }
+nom = "7.0.0"
+serde = { version = "1.0.130", optional = true, features = ["derive"] }
+serde_json = { version = "1.0.68", optional = true}
+thiserror = "1.0.30"
+yaz0 = { version = "0.3.0", optional = true }
+
+[dev-dependencies]
+all_asserts = "2.3.0"
+
+[features]
+json = ["serde", "serde_json"]
+botw-data = ["lazy_static", "json"]
