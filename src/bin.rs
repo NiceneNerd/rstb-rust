@@ -86,10 +86,11 @@ impl ResourceSizeTable {
         buf
     }
 
+    /// *Requires the `yaz0` feature.*
     /// Writes the RSTB to an in-memory buffer using the specified endianness
-    /// with yaz0 compression. Requires the `yaz0` feature. **Note:** The yaz0
-    /// implementation used is actually really slow, so it's better to compress
-    /// on your own if it suits your purpose.
+    /// with yaz0 compression. **Note:** The yaz0 implementation used is
+    /// actually really slow, so it's better to compress on your own if it
+    /// suits your purpose.
     #[cfg(feature = "yaz0")]
     pub fn to_compressed_binary(&self, endian: Endian) -> Vec<u8> {
         let mut buf: Vec<u8> =

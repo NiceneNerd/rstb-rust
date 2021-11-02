@@ -3,10 +3,24 @@ use std::collections::HashMap;
 use lazy_static::lazy_static;
 use serde_json::Value;
 
-use crate::{ResourceSizeTable, CRC32};
+use crate::{Endian, ResourceSizeTable, CRC32};
 
 const SWITCH_RSTB_JSON: &str = include_str!("../data/switch.json");
 const WIIU_RSTB_JSON: &str = include_str!("../data/wiiu.json");
+
+impl ResourceSizeTable {
+    /// *Requires the `botw-data` feature.*
+    /// Creates a new copy of a stock BOTW RSTB. Passing `Endian::Big` will
+    /// return the RSTB from the 1.5.0 Wii U version, and passing
+    /// `Endian::Little` will return the RSTB from the 1.6.0 Switch version.
+    #[cfg(feature = "botw-data")]
+    pub fn new_from_stock(endian: Endian) -> Self {
+        match endian {
+            Endian::Big => WIIU_RSTB.clone(),
+            Endian::Little => SWITCH_RSTB.clone(),
+        }
+    }
+}
 
 lazy_static! {
     pub(crate) static ref SWITCH_RSTB: ResourceSizeTable =

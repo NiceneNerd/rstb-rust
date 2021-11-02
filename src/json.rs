@@ -5,16 +5,19 @@ use serde::*;
 use std::collections::BTreeMap;
 
 impl ResourceSizeTable {
+    /// *Requires the `json` feature.*
     /// Generate a JSON string representation of this RSTB.
     pub fn to_text(&self) -> String {
         serde_json::to_string(self).unwrap()
     }
 
+    /// *Requires the `json` feature.*
     /// Generate a JSON string representation of this RSTB, pretty-printed.
     pub fn to_text_pretty(&self) -> String {
         serde_json::to_string_pretty(self).unwrap()
     }
 
+    /// *Requires the `json` feature.*
     /// Parse a JSON representation of an RSTB file.
     pub fn from_text<S: AsRef<str>>(text: S) -> crate::Result<Self> {
         serde_json::from_str(text.as_ref()).map_err(|e| e.into())

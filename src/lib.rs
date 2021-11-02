@@ -30,6 +30,22 @@
 //! # Ok(())
 //! # }
 //! ```
+//!
+//! There are three important optional features: `yaz0`, `json`, and `botw-data`.
+//! - **`yaz0`**: Enables parsing yaz0 compressed RSTB files automatically and
+//!   the method [`ResourceSizeTable::to_compressed_binary()`]. Note that the
+//!   yaz0 crate used is really slow so you're better off handling it some other
+//!   way if your use case permits (e.g. by using [roead](https://github.com/NiceneNerd/roead)).
+//! - **`json`**: Enables serializing/deserializing an RSTB file as JSON, using
+//!   the [`to_text()`](ResourceSizeTable::to_text()) and
+//!   [`from_text()`](ResourceSizeTable::from_text()) methods on [`ResourceSizeTable`].
+//!   Note that filenames can only be serialized if their CRC is known, which
+//!   requires the `botw-data` feature.
+//! - **`botw-data`**: Enables access to actual RSTB data from BOTW. This will
+//!   enable filename serialization in the [`to_text()`](ResourceSizeTable::to_text())
+//!   method if `json` is enabled, and more importantly enables the
+//!   [`new_from_stock()`](ResourceSizeTable::new_from_stock) method to create
+//!   a copy of the original BOTW RSTB (1.5.0 Wii U or 1.6.0 Switch).
 #![feature(exclusive_range_pattern)]
 
 mod bin;
@@ -40,7 +56,7 @@ pub mod calc;
 mod json;
 mod str;
 
-use crate::str::FixedString;
+pub use crate::str::FixedString;
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
 use std::{borrow::Borrow, collections::BTreeMap};
@@ -121,17 +137,6 @@ pub struct ResourceSizeTable {
 }
 
 impl ResourceSizeTable {
-    /// Creates a new copy of a stock BOTW RSTB. Passing `Endian::Big` will
-    /// return the RSTB from the 1.5.0 Wii U version, and passing
-    /// Endian::Little` will return the RSTB from the 1.6.0 Switch version.
-    #[cfg(feature = "botw-data")]
-    pub fn new_from_stock(endian: Endian) -> Self {
-        match endian {
-            Endian::Big => botw::WIIU_RSTB.clone(),
-            Endian::Little => botw::SWITCH_RSTB.clone(),
-        }
-    }
-
     /// Returns true if the RSTB contains a size value for the specified hash or resource name.
     /// Checks the CRC table first and then the name table.
     pub fn contains<'k, K: Into<ResourceKey<'k>>>(&self, entry: K) -> bool {

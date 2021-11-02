@@ -1,6 +1,6 @@
 [package]
 name = "rstb"
-version = "0.3.0"
+version = "0.3.1"
 description = "Rust library for manipulating Breath of the Wild's resource size table"
 documentation = "https://docs.rs/rstb"
 repository = "https://github.com/NiceneNerd/rstb-rust"
@@ -10,6 +10,9 @@ categories = ["parsing", "game-development"]
 license = "MIT"
 authors = ["Caleb Smith <macadamiadaze@gmail.com>"]
 edition = "2021"
+
+[package.metadata.docs.rs]
+features = ["json", "botw-data", "yaz0"]
 
 [dependencies]
 crc = "2.1.0"
