@@ -196,18 +196,32 @@ fn calc_or_estimate_from_size_and_name(
                             "beventpack" => 0xe0,
                             "bfevfl" => 0x58,
                             "hkrb" => 40,
+                            "bdmgparam" => (rounded as f32 * 0.666) as u32,
                             _ => 0,
                         }
                 }
-                Endian::Little => rounded + 0x168 + size + parse_size,
+                Endian::Little => {
+                    rounded
+                        + 0x168
+                        + size
+                        + parse_size
+                        + match ext {
+                            "bdmgparam" => (rounded as f32 * 0.666) as u32,
+                            _ => 0,
+                        }
+                }
             }),
             ParseSize::Complex => {
                 if estimate {
                     match ext {
                         "baniminfo" => Some(
-                            (rounded as f32 * (if filesize > 36864 { 1.5 } else { 4.0 })) as u32
+                            ((rounded as f32 * (if filesize > 36864 { 1.5 } else { 4.0 })) as u32
                                 + 0xe4
-                                + 0x24c,
+                                + 0x24c)
+                                * match endian {
+                                    Endian::Big => 1,
+                                    Endian::Little => 2,
+                                },
                         ),
                         "bfres" => Some(estimate_bfres(filesize, name, endian)),
                         _ => estimate_aamp(filesize, name, endian),
