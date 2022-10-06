@@ -380,13 +380,13 @@ mod tests {
 
     #[test]
     fn estimate_sizes() {
-        assert_ge!(
+        assert_eq!(
             super::estimate_from_slice_and_name(
                 &std::fs::read("test/Animal_Bass.Tex1.sbfres").unwrap(),
                 "Model/Animal_Bass.Tex1.sbfres",
                 Endian::Big
             ),
-            Some(50688)
+            Some(42756)
         );
         assert_ge!(
             super::estimate_from_slice_and_name(
