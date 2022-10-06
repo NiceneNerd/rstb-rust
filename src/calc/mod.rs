@@ -145,7 +145,7 @@ fn calc_or_estimate_from_bytes_and_name(
     endian: Endian,
     estimate: bool,
 ) -> Option<u32> {
-    if let Some(dot_pos) = name.rfind('.') {
+    if let Some(dot_pos) = name.find('.') {
         let filesize = match &bytes[0..4] {
             b"Yaz0" => match endian {
                     Endian::Big => u32::from_be_bytes(bytes[4..8].try_into().unwrap()) as usize,
@@ -205,7 +205,7 @@ fn calc_or_estimate_from_bytes_and_name(
                                 },
                         ),
                         "bdrop" => Some(rounded + 0xe4 + 0x27c + bdrop::parse_size(bytes, endian)),
-                        "bfres" => Some(estimate_bfres(filesize, name, endian)),
+                        "bfres" => Some(estimate_bfres(filesize, endian)),
                         "bgparamlist" => Some(rounded + 0xe4 + 0x248 + bgparamlist::parse_size(bytes, endian)),
                         "bmodellist" => Some(rounded + 0xe4 + 0x508 + bmodellist::parse_size(bytes, endian)),
                         "bphysics" => Some(rounded + 0xe4 + 0x324 + bphysics::parse_size(bytes, endian)),
@@ -311,68 +311,34 @@ fn estimate_aamp(filesize: usize, name: &str, endian: Endian) -> Option<u32> {
     } as u32)
 }
 
-fn estimate_bfres(filesize: usize, name: &str, endian: Endian) -> u32 {
+fn estimate_bfres(filesize: usize, endian: Endian) -> u32 {
     (filesize as f32
         * match endian {
             Endian::Big => {
-                if name.contains("Tex") {
-                    match filesize {
-                        (0..100) => 9.0,
-                        (100..2_000) => 7.0,
-                        (2_000..3_000) => 5.0,
-                        (3_000..4_000) => 4.0,
-                        (4_000..8_500) => 3.0,
-                        (8_500..12_000) => 2.0,
-                        (12_000..17_000) => 1.75,
-                        (17_000..30_000) => 1.5,
-                        (30_000..45_000) => 1.3,
-                        (45_000..100_000) => 1.2,
-                        (100_000..150_000) => 1.1,
-                        (150_000..200_000) => 1.07,
-                        (200_000..250_000) => 1.045,
-                        (250_000..300_000) => 1.035,
-                        (300_000..600_000) => 1.03,
-                        (600_000..1_000_000) => 1.015,
-                        (1_000_000..1_800_000) => 1.009,
-                        (1_800_000..4_500_000) => 1.005,
-                        (4_500_000..6_000_000) => 1.002,
-                        _ => 1.0015,
-                    }
-                } else {
-                    match filesize {
-                        (0..500) => 7.0,
-                        (500..750) => 5.0,
-                        (750..1_250) => 4.0,
-                        (1_250..2_000) => 3.5,
-                        (2_000..400_000) => 2.25,
-                        (400_000..600_000) => 2.1,
-                        (600_000..1_000_000) => 1.95,
-                        (1_000_000..1_500_000) => 1.85,
-                        (1_500_000..3_000_000) => 1.66,
-                        _ => 1.45,
-                    }
+                match filesize {
+                    (0..500) => 7.0,
+                    (500..750) => 5.0,
+                    (750..1_250) => 4.0,
+                    (1_250..2_000) => 3.5,
+                    (2_000..400_000) => 2.25,
+                    (400_000..600_000) => 2.1,
+                    (600_000..1_000_000) => 1.95,
+                    (1_000_000..1_500_000) => 1.85,
+                    (1_500_000..3_000_000) => 1.66,
+                    _ => 1.45,
                 }
             }
             Endian::Little => {
-                if name.contains("Tex") {
-                    match filesize {
-                        (0..10_000) => 2.0,
-                        (10_000..30_000) => 1.5,
-                        (30_000..50_000) => 1.3,
-                        _ => 1.2,
-                    }
-                } else {
-                    match filesize {
-                        (0..1_250) => 9.5,
-                        (1_250..2_500) => 6.0,
-                        (2_500..50_000) => 4.25,
-                        (50_000..100_000) => 3.66,
-                        (100_000..800_000) => 3.5,
-                        (800_000..2_000_000) => 3.15,
-                        (2_000_000..3_000_000) => 2.5,
-                        (3_000_000..4_000_000) => 1.667,
-                        _ => 1.6,
-                    }
+                match filesize {
+                    (0..1_250) => 9.5,
+                    (1_250..2_500) => 6.0,
+                    (2_500..50_000) => 4.25,
+                    (50_000..100_000) => 3.66,
+                    (100_000..800_000) => 3.5,
+                    (800_000..2_000_000) => 3.15,
+                    (2_000_000..3_000_000) => 2.5,
+                    (3_000_000..4_000_000) => 1.667,
+                    _ => 1.6,
                 }
             }
         }) as u32

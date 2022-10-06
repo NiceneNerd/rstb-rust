@@ -14,6 +14,10 @@ pub(crate) fn get_factory_info<S: AsRef<str>>(ext: S, endian: Endian) -> (u32, P
                 Endian::Big => (0x3c, ParseSize::Simple(0)),
             }
         }
+        "Tex.bfres" | "Tex1.bfres" | "Tex2.bfres" => match endian {
+            Endian::Little => (0x38, ParseSize::Simple(0)),
+            Endian::Big => (0x20, ParseSize::Simple(0)),
+        },
         "bfres" => match endian {
             Endian::Little => (0x1a8, ParseSize::Complex),
             Endian::Big => (0x13c, ParseSize::Complex),
