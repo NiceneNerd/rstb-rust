@@ -5,47 +5,41 @@ use std::mem::size_of;
 
 use super::{
     cpp_align,
-    WiiUParameterObj,
-    WiiUParameter,
-    WiiUSeadBuffer,
-    NXParameterObj,
-    NXParameter,
-    NXSeadBuffer,
-    F32,
-    S32,
-    WiiUSafeString,
-    NXSafeString
+    cpp_classes::wiiu,
+    cpp_classes::nx,
+    cpp_classes::F32,
+    cpp_classes::S32,
 };
 
 const BDROP_OVERHEAD: u32 = 0xAC;
 const TABLE_SIZE_WIIU: u32 = cpp_align(&[
-    size_of::<WiiUParameterObj>() as u32,
-    size_of::<WiiUParameter<WiiUSafeString>>() as u32,
-    size_of::<WiiUParameter<S32>>() as u32,
-    size_of::<WiiUParameter<S32>>() as u32,
-    size_of::<WiiUParameter<S32>>() as u32,
-    size_of::<WiiUParameter<S32>>() as u32,
-    size_of::<WiiUParameter<S32>>() as u32,
-    size_of::<WiiUSeadBuffer>() as u32,
+    size_of::<wiiu::agl::ParameterObj>() as u32,
+    size_of::<wiiu::agl::Parameter<wiiu::SafeString>>() as u32,
+    size_of::<wiiu::agl::Parameter<S32>>() as u32,
+    size_of::<wiiu::agl::Parameter<S32>>() as u32,
+    size_of::<wiiu::agl::Parameter<S32>>() as u32,
+    size_of::<wiiu::agl::Parameter<S32>>() as u32,
+    size_of::<wiiu::agl::Parameter<S32>>() as u32,
+    size_of::<wiiu::SeadBuffer>() as u32,
 ], &4);
 const ITEM_SIZE_WIIU: u32 = cpp_align(&[
-    size_of::<WiiUParameter<WiiUSafeString>>() as u32,
-    size_of::<WiiUParameter<F32>>() as u32,
+    size_of::<wiiu::agl::Parameter<wiiu::SafeString>>() as u32,
+    size_of::<wiiu::agl::Parameter<F32>>() as u32,
 ], &4);
 
 const TABLE_SIZE_NX: u32 = cpp_align(&[
-    size_of::<NXParameterObj>() as u32,
-    size_of::<NXParameter<NXSafeString>>() as u32,
-    size_of::<NXParameter<S32>>() as u32,
-    size_of::<NXParameter<S32>>() as u32,
-    size_of::<NXParameter<S32>>() as u32,
-    size_of::<NXParameter<S32>>() as u32,
-    size_of::<NXParameter<S32>>() as u32,
-    size_of::<NXSeadBuffer>() as u32,
+    size_of::<nx::agl::ParameterObj>() as u32,
+    size_of::<nx::agl::Parameter<nx::SafeString>>() as u32,
+    size_of::<nx::agl::Parameter<S32>>() as u32,
+    size_of::<nx::agl::Parameter<S32>>() as u32,
+    size_of::<nx::agl::Parameter<S32>>() as u32,
+    size_of::<nx::agl::Parameter<S32>>() as u32,
+    size_of::<nx::agl::Parameter<S32>>() as u32,
+    size_of::<nx::SeadBuffer>() as u32,
 ], &4);
 const ITEM_SIZE_NX: u32 = cpp_align(&[
-    size_of::<NXParameter<NXSafeString>>() as u32,
-    size_of::<NXParameter<F32>>() as u32,
+    size_of::<nx::agl::Parameter<nx::SafeString>>() as u32,
+    size_of::<nx::agl::Parameter<F32>>() as u32,
 ], &4);
 
 pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {

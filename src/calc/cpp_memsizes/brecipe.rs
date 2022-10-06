@@ -3,40 +3,34 @@ use crate::Endian;
 
 use std::mem::size_of;
 
-use super::{
-    cpp_align,
-    WiiUParameterObj,
-    WiiUParameter,
-    NXParameterObj,
-    NXParameter,
-    WiiUSeadBuffer,
-    NXSeadBuffer,
+use super::cpp_align;
+use super::cpp_classes::{
+    wiiu,
+    nx,
     S32,
-    WiiUSafeString,
-    NXSafeString,
 };
 
 const BRECIPE_OVERHEAD: u32 = 0x40;
 const TABLE_SIZE_WIIU: u32 = cpp_align(&[
-    size_of::<WiiUParameterObj>() as u32,
-    size_of::<WiiUParameter<WiiUSafeString>>() as u32,
-    size_of::<WiiUParameter<S32>>() as u32,
-    size_of::<WiiUSeadBuffer>() as u32,
+    size_of::<wiiu::agl::ParameterObj>() as u32,
+    size_of::<wiiu::agl::Parameter<wiiu::SafeString>>() as u32,
+    size_of::<wiiu::agl::Parameter<S32>>() as u32,
+    size_of::<wiiu::SeadBuffer>() as u32,
 ], &4);
 const ITEM_SIZE_WIIU: u32 = cpp_align(&[
-    size_of::<WiiUParameter<WiiUSafeString>>() as u32,
-    size_of::<WiiUParameter<S32>>() as u32,
+    size_of::<wiiu::agl::Parameter<wiiu::SafeString>>() as u32,
+    size_of::<wiiu::agl::Parameter<S32>>() as u32,
 ], &4);
 
 const TABLE_SIZE_NX: u32 = cpp_align(&[
-    size_of::<NXParameterObj>() as u32,
-    size_of::<NXParameter<NXSafeString>>() as u32,
-    size_of::<NXParameter<S32>>() as u32,
-    size_of::<NXSeadBuffer>() as u32,
+    size_of::<nx::agl::ParameterObj>() as u32,
+    size_of::<nx::agl::Parameter<nx::SafeString>>() as u32,
+    size_of::<nx::agl::Parameter<S32>>() as u32,
+    size_of::<nx::SeadBuffer>() as u32,
 ], &4);
 const ITEM_SIZE_NX: u32 = cpp_align(&[
-    size_of::<NXParameter<NXSafeString>>() as u32,
-    size_of::<NXParameter<S32>>() as u32,
+    size_of::<nx::agl::Parameter<nx::SafeString>>() as u32,
+    size_of::<nx::agl::Parameter<S32>>() as u32,
 ], &4);
 
 pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
