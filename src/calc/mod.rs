@@ -61,7 +61,7 @@ mod cpp_memsizes;
 use crate::{Endian, Result};
 use info::{get_factory_info, ParseSize};
 #[cfg(feature = "complex")]
-use cpp_memsizes::{bdrop, bgparamlist, bmodellist, bphysics, brecipe, bshop, bxml};
+use cpp_memsizes::{baslist, bdrop, bgparamlist, bmodellist, bphysics, brecipe, bshop, bxml};
 use std::path::Path;
 
 #[inline]
@@ -204,6 +204,7 @@ fn calc_or_estimate_from_bytes_and_name(
                                     Endian::Little => 2,
                                 },
                         ),
+                        "baslist" => Some(rounded + 0xe4 + 0x2f4 + baslist::parse_size(bytes, endian)),
                         "bdrop" => Some(rounded + 0xe4 + 0x27c + bdrop::parse_size(bytes, endian)),
                         "bfres" => Some(estimate_bfres(filesize, endian)),
                         "bgparamlist" => Some(rounded + 0xe4 + 0x248 + bgparamlist::parse_size(bytes, endian)),
