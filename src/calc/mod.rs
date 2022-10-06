@@ -55,10 +55,14 @@
 //! `Endian:Little` for Switch files, even if they are actually in big endian.
 
 mod info;
+#[cfg(feature = "complex")]
+mod cpp_memsizes;
 
 use crate::{Endian, Result};
 use info::{get_factory_info, ParseSize};
-use std::{io::Read, path::Path};
+#[cfg(feature = "complex")]
+use cpp_memsizes::{bdrop, bgparamlist, bmodellist, bphysics, brecipe, bshop, bxml};
+use std::path::Path;
 
 #[inline]
 fn round_32(size: usize) -> u32 {
@@ -68,17 +72,8 @@ fn round_32(size: usize) -> u32 {
 /// Infallibly calculate an RSTB value from a file on disk, returning `None` if
 /// the type is not supported.
 pub fn calc_from_file<P: AsRef<Path>>(file: P, endian: Endian) -> Result<Option<u32>> {
-    let mut file_handle = std::fs::File::open(file.as_ref())?;
-    let mut magic: [u8; 4] = [0; 4];
-    file_handle.read_exact(&mut magic)?;
-    let size = if &magic == b"Yaz0" {
-        file_handle.read_exact(&mut magic)?;
-        u32::from_be_bytes(magic) as usize
-    } else {
-        file_handle.metadata()?.len() as usize
-    };
-    Ok(calc_from_size_and_name(
-        size,
+    Ok(calc_from_bytes_and_name(
+        &std::fs::read(file.as_ref()).unwrap(),
         file.as_ref()
             .file_name()
             .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, "Path not a file"))?
@@ -98,37 +93,22 @@ pub fn calc_from_slice_and_name<B: AsRef<[u8]>>(
     let bytes = bytes.as_ref();
     if bytes.len() < 8 {
         None
-    } else if &bytes[0..4] == b"Yaz0" {
-        calc_from_size_and_name(
-            u32::from_be_bytes(bytes[4..8].try_into().unwrap()) as usize,
-            name,
-            endian,
-        )
     } else {
-        calc_from_size_and_name(bytes.len(), name, endian)
+        calc_from_bytes_and_name(bytes, name, endian)
     }
 }
 
 /// Infallibly calculate an RSTB value from an uncompressed file size and
 /// filename, returning `None` if the type is not supported.
-pub fn calc_from_size_and_name(filesize: usize, name: &str, endian: Endian) -> Option<u32> {
-    calc_or_estimate_from_size_and_name(filesize, name, endian, false)
+pub fn calc_from_bytes_and_name(bytes: &[u8], name: &str, endian: Endian) -> Option<u32> {
+    calc_or_estimate_from_bytes_and_name(bytes, name, endian, false)
 }
 
 /// Infallibly calculate *or* estimate an RSTB value from a file on disk,
 /// returning `None` if the type is not supported.
 pub fn estimate_from_file<P: AsRef<Path>>(file: P, endian: Endian) -> Result<Option<u32>> {
-    let mut file_handle = std::fs::File::open(file.as_ref())?;
-    let mut magic: [u8; 4] = [0; 4];
-    file_handle.read_exact(&mut magic)?;
-    let size = if &magic == b"Yaz0" {
-        file_handle.read_exact(&mut magic)?;
-        u32::from_be_bytes(magic) as usize
-    } else {
-        file_handle.metadata()?.len() as usize
-    };
-    Ok(estimate_from_size_and_name(
-        size,
+    Ok(estimate_from_bytes_and_name(
+        &std::fs::read(file.as_ref()).unwrap(),
         file.as_ref()
             .file_name()
             .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, "Path not a file"))?
@@ -148,30 +128,31 @@ pub fn estimate_from_slice_and_name<B: AsRef<[u8]>>(
     let bytes = bytes.as_ref();
     if bytes.len() < 8 {
         None
-    } else if &bytes[0..4] == b"Yaz0" {
-        estimate_from_size_and_name(
-            u32::from_be_bytes(bytes[4..8].try_into().unwrap()) as usize,
-            name,
-            endian,
-        )
     } else {
-        estimate_from_size_and_name(bytes.len(), name, endian)
+        estimate_from_bytes_and_name(bytes, name, endian)
     }
 }
 
 /// Infallibly calculate an RSTB value from an uncompressed file size and
 /// filename, returning `None` if the type is not supported.
-pub fn estimate_from_size_and_name(filesize: usize, name: &str, endian: Endian) -> Option<u32> {
-    calc_or_estimate_from_size_and_name(filesize, name, endian, true)
+pub fn estimate_from_bytes_and_name(bytes: &[u8], name: &str, endian: Endian) -> Option<u32> {
+    calc_or_estimate_from_bytes_and_name(bytes, name, endian, true)
 }
 
-fn calc_or_estimate_from_size_and_name(
-    filesize: usize,
+fn calc_or_estimate_from_bytes_and_name(
+    bytes: &[u8],
     name: &str,
     endian: Endian,
     estimate: bool,
 ) -> Option<u32> {
     if let Some(dot_pos) = name.rfind('.') {
+        let filesize = match &bytes[0..4] {
+            b"Yaz0" => match endian {
+                    Endian::Big => u32::from_be_bytes(bytes[4..8].try_into().unwrap()) as usize,
+                    Endian::Little => u32::from_le_bytes(bytes[4..8].try_into().unwrap()) as usize
+                },
+            _ => bytes.len()
+        };
         let rounded = round_32(filesize);
         let raw_ext = &name[dot_pos + 1..];
         let ext = match raw_ext {
@@ -223,7 +204,14 @@ fn calc_or_estimate_from_size_and_name(
                                     Endian::Little => 2,
                                 },
                         ),
+                        "bdrop" => Some(rounded + 0xe4 + 0x27c + bdrop::parse_size(bytes, endian)),
                         "bfres" => Some(estimate_bfres(filesize, name, endian)),
+                        "bgparamlist" => Some(rounded + 0xe4 + 0x248 + bgparamlist::parse_size(bytes, endian)),
+                        "bmodellist" => Some(rounded + 0xe4 + 0x508 + bmodellist::parse_size(bytes, endian)),
+                        "bphysics" => Some(rounded + 0xe4 + 0x324 + bphysics::parse_size(bytes, endian)),
+                        "brecipe" => Some(rounded + 0xe4 + 0x27c + brecipe::parse_size(bytes, endian)),
+                        "bshop" => Some(rounded + 0xe4 + 0x27c + bshop::parse_size(bytes, endian)),
+                        "bxml" => Some(rounded + 0xe4 + 0x4a8 + bxml::parse_size(bytes)),
                         _ => estimate_aamp(filesize, name, endian),
                     }
                 } else {
@@ -427,40 +415,84 @@ mod tests {
     #[test]
     fn estimate_sizes() {
         assert_ge!(
-            super::estimate_from_size_and_name(42496, "Model/Animal_Bass.Tex1.sbfres", Endian::Big),
+            super::estimate_from_slice_and_name(
+                &std::fs::read("test/Animal_Bass.Tex1.sbfres").unwrap(),
+                "Model/Animal_Bass.Tex1.sbfres",
+                Endian::Big
+            ),
             Some(50688)
         );
         assert_ge!(
-            super::estimate_from_size_and_name(
-                7735632,
-                "Model/DgnMrgPrt_Dungeon061.bfres",
-                Endian::Little,
+            super::estimate_from_slice_and_name(
+                &std::fs::read("test/DgnMrgPrt_Dungeon061.sbfres").unwrap(),
+                "Model/DgnMrgPrt_Dungeon061.sbfres",
+                Endian::Big,
             ),
-            Some(8658192)
+            Some(8671688)
         );
         assert_ge!(
-            super::estimate_from_size_and_name(
-                7735632,
-                "Model/DgnMrgPrt_Dungeon061.bfres",
-                Endian::Little,
-            ),
-            Some(8658192)
-        );
-        assert_ge!(
-            super::estimate_from_size_and_name(
-                1408,
-                "Actor/GeneralParamList/Weapon_Bow_071.bgparamlist",
-                Endian::Little,
-            ),
-            Some(8272)
-        );
-        assert_ge!(
-            super::estimate_from_size_and_name(
-                3540,
+            super::estimate_from_slice_and_name(
+                &std::fs::read("test/NpcGerudoQueenBattle.baiprog").unwrap(),
                 "Actor/AIProgram/NpcGerudoQueenBattle.baiprog",
                 Endian::Big,
             ),
             Some(9444)
+        );
+        assert_eq!(
+            super::estimate_from_slice_and_name(
+                &std::fs::read("test/Player_Link.bgparamlist").unwrap(),
+                "Actor/GeneralParamList/Player_Link.bgparamlist",
+                Endian::Big,
+            ),
+            Some(7028)
+        );
+        assert_eq!(
+            super::estimate_from_slice_and_name(
+                &std::fs::read("test/Armor_001_Upper.bmodellist").unwrap(),
+                "Actor/ModelList/Armor_001_Upper.bmodellist",
+                Endian::Big,
+            ),
+            Some(2636)
+        );
+        assert_eq!(
+            super::estimate_from_slice_and_name(
+                &std::fs::read("test/Armor_002_Upper.brecipe").unwrap(),
+                "Actor/ModelList/Armor_002_Upper.brecipe",
+                Endian::Big,
+            ),
+            Some(1276)
+        );
+        assert_eq!(
+            super::estimate_from_slice_and_name(
+                &std::fs::read("test/Assassin_Senior.bdrop").unwrap(),
+                "Actor/DropTable/Assassin_Senior.bdrop",
+                Endian::Big,
+            ),
+            Some(1132)
+        );
+        assert_eq!(
+            super::estimate_from_slice_and_name(
+                &std::fs::read("test/Assassin_Senior.bxml").unwrap(),
+                "Actor/ActorLink/Assassin_Senior.bxml",
+                Endian::Big,
+            ),
+            Some(2116)
+        );
+        assert_eq!(
+            super::estimate_from_slice_and_name(
+                &std::fs::read("test/Npc_TripMaster_08.bshop").unwrap(),
+                "Actor/ShopData/Npc_TripMaster_08.bshop",
+                Endian::Big,
+            ),
+            Some(2588)
+        );
+        assert_ge!(
+            super::estimate_from_slice_and_name(
+                &std::fs::read("test/Player_Link.bphysics").unwrap(),
+                "Actor/Physics/Player_Link.bphysics",
+                Endian::Big,
+            ),
+            Some(38940)
         );
     }
 }
