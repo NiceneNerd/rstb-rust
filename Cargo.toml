@@ -12,14 +12,15 @@ authors = ["Caleb Smith <macadamiadaze@gmail.com>"]
 edition = "2021"
 
 [package.metadata.docs.rs]
-features = ["json", "botw-data", "yaz0", "complex"]
+features = ["json", "botw-data", "yaz0", "complex", "complex_testing"]
 
 [dependencies]
 crc = "2.1.0"
+glob = { version = "0.3.0", optional = true }
 lazy_static = { version = "1.4.0", optional = true }
 nom = "7.0.0"
 phf = { version = "0.11", features = ["macros"], optional = true }
-roead = { version = "0.16", features = ["aamp", "yaz0"], optional = true }
+roead = { version = "0.16", features = ["aamp", "yaz0", "sarc"], optional = true }
 serde = { version = "1.0.130", optional = true, features = ["derive"] }
 serde_json = { version = "1.0.68", optional = true}
 thiserror = "1.0.30"
@@ -32,3 +33,4 @@ all_asserts = "2.3.0"
 json = ["serde", "serde_json"]
 botw-data = ["lazy_static", "json"]
 complex = ["roead", "phf"]
+complex_testing = ["roead", "glob"]

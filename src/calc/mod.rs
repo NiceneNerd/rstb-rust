@@ -652,4 +652,45 @@ mod tests {
         assert_eq!(size_of::<BehaviorDef<u64>>(), 0xa0);
         assert_eq!(size_of::<QueryDef<u64>>(), 0x98);
     }
+    #[cfg(feature = "complex_testing")]
+    #[test]
+    fn test_all_baiprog() {
+        use std::collections::HashSet;
+        use roead::{sarc, aamp::ParameterIO};
+        use crate::ResourceSizeTable;
+        use glob::glob;
+        let mut result: HashSet<String> = HashSet::new();
+
+        let root = "E:/Users/chodn/Documents/ISOs - WiiU/The Legend of Zelda Breath of the Wild (UPDATE DATA) (v208) (USA)/content";
+        let rstb_path = root.to_owned() + "/System/Resource/ResourceSizeTable.product.srsizetable";
+        let rstable = ResourceSizeTable::from_binary(std::fs::read(rstb_path).unwrap()).unwrap();
+        for entry in glob(&(root.to_owned() + "/Actor/Pack/*.sbactorpack")).unwrap() {
+            match entry {
+                Ok(path) => {
+                    let actorname = path.file_stem().unwrap().to_str().unwrap();
+                    let sarc = sarc::Sarc::new(std::fs::read(&path).unwrap()).unwrap();
+                    let bxml = ParameterIO::from_binary(sarc.get_data(&format!("Actor/ActorLink/{}.bxml", actorname)).unwrap().unwrap()).unwrap();
+                    let user = bxml.param_root.objects.get("LinkTarget").unwrap().get("AIProgramUser").unwrap().as_str().unwrap();
+                    let param_string = format!("Actor/AIProgram/{}.baiprog", user);
+                    let param_name = param_string.as_str();
+                    if param_name.contains("Dummy") | result.contains(param_name) {
+                        continue;
+                    }
+                    if let Some(o_file) = sarc.get_data(param_name).unwrap() {
+                        let file_size = ((o_file.len() as i32 + 31) & -32) as u32;
+                        let vanilla_parse_size: u32;
+                        if let Some(rstb_entry) = rstable.get(param_name) {
+                            vanilla_parse_size = rstb_entry - 0xe4 - 0x30c - file_size;
+                            result.insert(param_string);
+                        } else { println!("{} not in RSTB???", param_name); continue; }
+
+                        let leftover_size = crate::calc::cpp_memsizes::baiprog::parse_size(o_file, Endian::Big) as i32 - vanilla_parse_size as i32;
+
+                        assert_ge!(leftover_size, 0);
+                    }
+                },
+                Err(_) => println!("File error...?"),
+            }
+        }
+    }
 }

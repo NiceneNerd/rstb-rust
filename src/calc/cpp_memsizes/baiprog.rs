@@ -5,7 +5,7 @@ use std::mem::size_of;
 
 use super::cpp_classes::{AIProgram::*, agl::Parameter, Bool32, S32, U32, F32, Vector3f, SafeString};
 
-const BAIPROG_OVERHEAD: u32 = 0x80;
+const BAIPROG_OVERHEAD: u32 = 0xe6;
 
 pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
     let mut total_size = BAIPROG_OVERHEAD;
@@ -106,7 +106,7 @@ fn parse_query(list: &ParameterList, size: &mut u32, endian: Endian) {
 }
 
 fn parse_defparams(obj: &ParameterObject, size: &mut u32, endian: Endian) {
-    let sinst_num_params: u32 = obj.len() as u32;
+    let sinst_num_params = obj.len() as u32;
     if sinst_num_params > 0 {
         let ptr_size: u32 = match endian {
             Endian::Big => size_of::<u32>() as u32,
