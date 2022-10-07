@@ -6,8 +6,10 @@ pub mod bphysics;
 pub mod brecipe;
 pub mod bshop;
 pub mod bxml;
-mod cpp_classes;
+pub mod cpp_classes;
 
+// Leaving this here in case I need it for some reason in the future
+#[allow(dead_code)]
 const fn cpp_align(list: &[u32], alignment: &u32) -> u32 {
     let mut size: u32 = 0;
     let a: u32 = if *alignment > 0 { *alignment } else {
