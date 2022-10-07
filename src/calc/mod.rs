@@ -61,7 +61,17 @@ mod cpp_memsizes;
 use crate::{Endian, Result};
 use info::{get_factory_info, ParseSize};
 #[cfg(feature = "complex")]
-use cpp_memsizes::{baslist, bdrop, bgparamlist, bmodellist, bphysics, brecipe, bshop, bxml};
+use cpp_memsizes::{
+    baiprog,
+    baslist,
+    bdrop,
+    bgparamlist,
+    bmodellist,
+    bphysics,
+    brecipe,
+    bshop,
+    bxml
+};
 use std::path::Path;
 
 #[inline]
@@ -195,6 +205,7 @@ fn calc_or_estimate_from_bytes_and_name(
             ParseSize::Complex => {
                 if estimate {
                     match ext {
+                        "baiprog" => Some(rounded + 0xe4 + 0x30c + baiprog::parse_size(bytes, endian)),
                         "baniminfo" => Some(
                             ((rounded as f32 * (if filesize > 36864 { 1.5 } else { 4.0 })) as u32
                                 + 0xe4
@@ -629,5 +640,16 @@ mod tests {
         assert_eq!(size_of::<GParamListObjectWizzrobe<u64>>(), 0x168);
         assert_eq!(size_of::<GParamListObjectWolfLink<u64>>(), 0x878);
         assert_eq!(size_of::<GParamListObjectZora<u64>>(), 0xd8);
+    }
+    #[test]
+    fn baiprog_size_tests() {
+        use std::mem::size_of;
+        use crate::calc::cpp_memsizes::cpp_classes::AIProgram::*;
+        assert_eq!(size_of::<AIActionDef<u32>>(), 0x6c);
+        assert_eq!(size_of::<BehaviorDef<u32>>(), 0x54);
+        assert_eq!(size_of::<QueryDef<u32>>(), 0x50);
+        assert_eq!(size_of::<AIActionDef<u64>>(), 0xc8);
+        assert_eq!(size_of::<BehaviorDef<u64>>(), 0xa0);
+        assert_eq!(size_of::<QueryDef<u64>>(), 0x98);
     }
 }

@@ -2,6 +2,7 @@
 #![allow(non_snake_case)]
 
 pub mod agl;
+pub mod AIProgram;
 pub mod ASList;
 pub mod DropTable;
 pub mod GParamList;

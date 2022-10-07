@@ -1,3 +1,4 @@
+pub mod baiprog;
 pub mod baslist;
 pub mod bdrop;
 pub mod bgparamlist;
