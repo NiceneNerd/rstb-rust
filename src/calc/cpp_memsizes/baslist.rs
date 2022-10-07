@@ -3,7 +3,7 @@ use crate::Endian;
 
 use std::mem::size_of;
 
-use super::cpp_classes::*;
+use super::cpp_classes::ASList::*;
 
 const BASLIST_OVERHEAD: u32 = 0x80;
 
@@ -13,18 +13,18 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
     let (asdefine_size, cfdefine_size, cfpost_size, cfexcept_size, addres_size): (u32, u32, u32, u32, u32);
     match endian {
         Endian::Big => {
-            asdefine_size = size_of::<ASList::ASDefine<u32>>() as u32;
-            cfdefine_size = size_of::<ASList::CFDefine<u32>>() as u32;
-            cfpost_size = size_of::<ASList::CFPost<u32>>() as u32;
-            cfexcept_size = size_of::<ASList::CFExcept<u32>>() as u32;
-            addres_size = size_of::<ASList::AddRes<u32>>() as u32;
+            asdefine_size = size_of::<ASDefine<u32>>() as u32;
+            cfdefine_size = size_of::<CFDefine<u32>>() as u32;
+            cfpost_size = size_of::<CFPost<u32>>() as u32;
+            cfexcept_size = size_of::<CFExcept<u32>>() as u32;
+            addres_size = size_of::<AddRes<u32>>() as u32;
         },
         Endian::Little => {
-            asdefine_size = size_of::<ASList::ASDefine<u64>>() as u32;
-            cfdefine_size = size_of::<ASList::CFDefine<u64>>() as u32;
-            cfpost_size = size_of::<ASList::CFPost<u64>>() as u32;
-            cfexcept_size = size_of::<ASList::CFExcept<u64>>() as u32;
-            addres_size = size_of::<ASList::AddRes<u64>>() as u32;
+            asdefine_size = size_of::<ASDefine<u64>>() as u32;
+            cfdefine_size = size_of::<CFDefine<u64>>() as u32;
+            cfpost_size = size_of::<CFPost<u64>>() as u32;
+            cfexcept_size = size_of::<CFExcept<u64>>() as u32;
+            addres_size = size_of::<AddRes<u64>>() as u32;
         },
     }
 

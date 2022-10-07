@@ -3,7 +3,7 @@ use crate::Endian;
 
 use std::mem::size_of;
 
-use super::cpp_classes::Recipe;
+use super::cpp_classes::Recipe::*;
 
 const BRECIPE_OVERHEAD: u32 = 0x40;
 
@@ -13,12 +13,12 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
     let (table_size, item_size): (u32, u32);
     match endian {
         Endian::Big => {
-            table_size = size_of::<Recipe::Table<u32>>() as u32;
-            item_size = size_of::<Recipe::Item<u32>>() as u32;
+            table_size = size_of::<Table<u32>>() as u32;
+            item_size = size_of::<Item<u32>>() as u32;
         },
         Endian::Little => {
-            table_size = size_of::<Recipe::Table<u64>>() as u32;
-            item_size = size_of::<Recipe::Item<u64>>() as u32;
+            table_size = size_of::<Table<u64>>() as u32;
+            item_size = size_of::<Item<u64>>() as u32;
         },
     }
 
