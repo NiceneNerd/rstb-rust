@@ -654,7 +654,7 @@ mod tests {
     fn test_all_baiprog() {
         use std::collections::HashSet;
         use roead::{sarc, aamp::ParameterIO};
-        use crate::ResourceSizeTable;
+        use crate::{ResourceSizeTable, calc::estimate_from_bytes_and_name};
         use glob::glob;
         let mut result: HashSet<String> = HashSet::new();
 
@@ -674,16 +674,14 @@ mod tests {
                         continue;
                     }
                     if let Some(o_file) = sarc.get_data(param_name).unwrap() {
-                        let file_size = ((o_file.len() as i32 + 31) & -32) as u32;
-                        let vanilla_parse_size: u32;
                         if let Some(rstb_entry) = rstable.get(param_name) {
-                            vanilla_parse_size = rstb_entry - 0xe4 - 0x30c - file_size;
-                            result.insert(param_string);
+                            result.insert(param_string.to_owned());
+                            let calc_size = estimate_from_bytes_and_name(o_file, param_name, Endian::Big).unwrap() as i32;
+
+                            let leftover_size = calc_size - rstb_entry as i32;
+    
+                            assert_ge!(leftover_size, 0);
                         } else { println!("{} not in RSTB???", param_name); continue; }
-
-                        let leftover_size = crate::calc::cpp_memsizes::baiprog::parse_size(o_file, Endian::Big) as i32 - vanilla_parse_size as i32;
-
-                        assert_ge!(leftover_size, 0);
                     }
                 },
                 Err(_) => println!("File error...?"),
