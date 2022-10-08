@@ -157,10 +157,7 @@ fn calc_or_estimate_from_bytes_and_name(
 ) -> Option<u32> {
     if let Some(dot_pos) = name.find('.') {
         let filesize = match &bytes[0..4] {
-            b"Yaz0" => match endian {
-                    Endian::Big => u32::from_be_bytes(bytes[4..8].try_into().unwrap()) as usize,
-                    Endian::Little => u32::from_le_bytes(bytes[4..8].try_into().unwrap()) as usize
-                },
+            b"Yaz0" => u32::from_be_bytes(bytes[4..8].try_into().unwrap()) as usize,
             _ => bytes.len()
         };
         let rounded = round_32(filesize);
