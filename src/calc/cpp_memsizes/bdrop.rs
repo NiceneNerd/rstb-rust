@@ -5,10 +5,17 @@ use std::mem::size_of;
 
 use super::cpp_classes::DropTable::*;
 
+const CLASS_SIZE_WIIU: u32 = 0x27c;
+const CLASS_SIZE_NX: u32 = 0x320;
+
 const BDROP_OVERHEAD: u32 = 0xAC;
 
 pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
-    let mut total_size = BDROP_OVERHEAD;
+    let mut total_size = match endian {
+        Endian::Big => super::PARSE_CONST_WIIU + CLASS_SIZE_WIIU,
+        Endian::Little => super::PARSE_CONST_NX + CLASS_SIZE_NX,
+    };
+    total_size += BDROP_OVERHEAD;
     let a = ParameterIO::from_binary(bytes).unwrap();
     let (table_size, item_size): (u32, u32);
     match endian {

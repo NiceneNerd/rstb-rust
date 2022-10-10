@@ -5,10 +5,17 @@ use std::mem::size_of;
 
 use super::cpp_classes::ASList::*;
 
+const CLASS_SIZE_WIIU: u32 = 0x2f4;
+const CLASS_SIZE_NX: u32 = 0x410;
+
 const BASLIST_OVERHEAD: u32 = 0x80;
 
 pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
-    let mut total_size = BASLIST_OVERHEAD;
+    let mut total_size = match endian {
+        Endian::Big => super::PARSE_CONST_WIIU + CLASS_SIZE_WIIU,
+        Endian::Little => super::PARSE_CONST_NX + CLASS_SIZE_NX,
+    };
+    total_size += BASLIST_OVERHEAD;
     let a = ParameterIO::from_binary(bytes).unwrap();
     let (asdefine_size, cfdefine_size, cfpost_size, cfexcept_size, addres_size): (u32, u32, u32, u32, u32);
     match endian {

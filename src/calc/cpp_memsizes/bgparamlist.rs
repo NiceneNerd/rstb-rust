@@ -6,6 +6,9 @@ use phf::{Map, phf_map};
 
 use super::cpp_classes::GParamList::*;
 
+const CLASS_SIZE_WIIU: u32 = 0x248;
+const CLASS_SIZE_NX: u32 = 0x2c0;
+
 const BGPARAM_OVERHEAD: u32 = 0x2c0;
 static OBJ_SIZES_WIIU: Map<&'static str, u32> = phf_map! {
     "AirWall" => size_of::<GParamListObjectAirWall<u32>>() as u32,
@@ -171,8 +174,12 @@ static OBJ_SIZES_NX: Map<&'static str, u32> = phf_map! {
 };
 
 pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
+    let mut total_size = match endian {
+        Endian::Big => super::PARSE_CONST_WIIU + CLASS_SIZE_WIIU,
+        Endian::Little => super::PARSE_CONST_NX + CLASS_SIZE_NX,
+    };
+    total_size += BGPARAM_OVERHEAD;
     let a = ParameterIO::from_binary(bytes).unwrap();
-    let mut total_size = BGPARAM_OVERHEAD;
     let obj_map: &Map<&'static str, u32> = match endian {
         Endian::Big => &OBJ_SIZES_WIIU,
         Endian::Little => &OBJ_SIZES_NX,

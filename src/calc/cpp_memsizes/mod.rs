@@ -9,6 +9,9 @@ pub mod bshop;
 pub mod bxml;
 pub mod cpp_classes;
 
+const PARSE_CONST_WIIU: u32 = 0xe4;
+const PARSE_CONST_NX: u32 = 0x168;
+
 // Leaving this here in case I need it for some reason in the future
 #[allow(dead_code)]
 const fn cpp_align(list: &[u32], alignment: &u32) -> u32 {

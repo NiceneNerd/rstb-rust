@@ -11,10 +11,17 @@ use super::cpp_classes::Vector3f;
 use super::cpp_classes::agl::Parameter;
 use super::cpp_classes::Physics::*;
 
+const CLASS_SIZE_WIIU: u32 = 0x324;
+const CLASS_SIZE_NX: u32 = 0x470;
+
 const PARAMSET_OVERHEAD: u32 = 0x70; // 0x1A8;
 
 pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
-    let mut total_size = PARAMSET_OVERHEAD;
+    let mut total_size = match endian {
+        Endian::Big => super::PARSE_CONST_WIIU + CLASS_SIZE_WIIU,
+        Endian::Little => super::PARSE_CONST_NX + CLASS_SIZE_NX,
+    };
+    total_size += PARAMSET_OVERHEAD;
     let a = ParameterIO::from_binary(bytes).unwrap();
     let (rigidbodysetparam_size, rigidbodyparam_size, shapeparamobj_size, vertex_size): (u32, u32, u32, u32);
     let (charactercontrollerparam_size, form_size, ragdollparam_size,edgerigidbodyparam_size): (u32, u32, u32, u32);

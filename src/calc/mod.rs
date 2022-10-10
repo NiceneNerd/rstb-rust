@@ -202,7 +202,7 @@ fn calc_or_estimate_from_bytes_and_name(
             ParseSize::Complex => {
                 if estimate {
                     match ext {
-                        "baiprog" => Some(rounded + 0xe4 + 0x30c + baiprog::parse_size(bytes, endian)),
+                        "baiprog" => Some(rounded + baiprog::parse_size(bytes, endian)),
                         "baniminfo" => Some(
                             ((rounded as f32 * (if filesize > 36864 { 1.5 } else { 4.0 })) as u32
                                 + 0xe4
@@ -212,15 +212,15 @@ fn calc_or_estimate_from_bytes_and_name(
                                     Endian::Little => 2,
                                 },
                         ),
-                        "baslist" => Some(rounded + 0xe4 + 0x2f4 + baslist::parse_size(bytes, endian)),
-                        "bdrop" => Some(rounded + 0xe4 + 0x27c + bdrop::parse_size(bytes, endian)),
+                        "baslist" => Some(rounded + baslist::parse_size(bytes, endian)),
+                        "bdrop" => Some(rounded + bdrop::parse_size(bytes, endian)),
                         "bfres" => Some(estimate_bfres(filesize, endian)),
-                        "bgparamlist" => Some(rounded + 0xe4 + 0x248 + bgparamlist::parse_size(bytes, endian)),
-                        "bmodellist" => Some(rounded + 0xe4 + 0x508 + bmodellist::parse_size(bytes, endian)),
-                        "bphysics" => Some(rounded + 0xe4 + 0x324 + bphysics::parse_size(bytes, endian)),
-                        "brecipe" => Some(rounded + 0xe4 + 0x27c + brecipe::parse_size(bytes, endian)),
-                        "bshop" => Some(rounded + 0xe4 + 0x27c + bshop::parse_size(bytes, endian)),
-                        "bxml" => Some(rounded + 0xe4 + 0x4a8 + bxml::parse_size(bytes)),
+                        "bgparamlist" => Some(rounded + bgparamlist::parse_size(bytes, endian)),
+                        "bmodellist" => Some(rounded + bmodellist::parse_size(bytes, endian)),
+                        "bphysics" => Some(rounded + bphysics::parse_size(bytes, endian)),
+                        "brecipe" => Some(rounded + brecipe::parse_size(bytes, endian)),
+                        "bshop" => Some(rounded + bshop::parse_size(bytes, endian)),
+                        "bxml" => Some(rounded + bxml::parse_size(bytes, endian)),
                         "hknm2" => Some(rounded + match endian {
                             Endian::Big => 0x19c,
                             Endian::Little => 0x290
