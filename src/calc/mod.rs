@@ -221,6 +221,14 @@ fn calc_or_estimate_from_bytes_and_name(
                         "brecipe" => Some(rounded + 0xe4 + 0x27c + brecipe::parse_size(bytes, endian)),
                         "bshop" => Some(rounded + 0xe4 + 0x27c + bshop::parse_size(bytes, endian)),
                         "bxml" => Some(rounded + 0xe4 + 0x4a8 + bxml::parse_size(bytes)),
+                        "hknm2" => Some(rounded + match endian {
+                            Endian::Big => 0x19c,
+                            Endian::Little => 0x290
+                        }),
+                        "hksc" => Some(rounded + match endian {
+                            Endian::Big => 0x74cc,
+                            Endian::Little => 0x9c00
+                        }),
                         _ => estimate_aamp(filesize, name, endian),
                     }
                 } else {
