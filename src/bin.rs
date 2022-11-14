@@ -21,12 +21,12 @@ impl ResourceSizeTable {
         let mut endian = Endian::Big;
         let has_magic = &bytes[0..4] == b"RSTB";
         let crc_table_size = if has_magic {
-            let size = read_u32(&bytes[4..8], endian)?;
-            if size > 2000000000 {
+            let size = read_u32(&bytes[8..12], endian)?;
+            if size > 0x10000 {
                 endian = Endian::Little;
                 read_u32(&bytes[4..8], endian)?
             } else {
-                size
+                read_u32(&bytes[4..8], endian)?
             }
         } else {
             (bytes.len() / 8) as u32
