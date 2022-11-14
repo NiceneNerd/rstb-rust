@@ -56,7 +56,7 @@ pub struct ClothSetParam<T> {
     cloth_header_obj: ParameterObj<T>,
     cloth_setup_file_path: Parameter<T, SafeString<T>>,
     cloth_num: Parameter<T, Int>,
-    cloth_setup_file_name: FixedSafeString32<T>,
+    cloth_setup_file_name: FixedSafeString64<T>,
     sub_wind: ClothSubWindParam<T>,
     cloths: SeadBuffer<T>,
 }
