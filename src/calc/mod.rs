@@ -184,7 +184,7 @@ fn calc_or_estimate_from_bytes_and_name(
                             "beventpack" => 0xe0,
                             "bfevfl" => 0x58,
                             "hkrb" => 40,
-                            "bdmgparam" => (rounded as f32 * 0.666) as u32,
+                            //"bdmgparam" => (rounded as f32 * 0.666) as u32,
                             _ => 0,
                         }
                 }
