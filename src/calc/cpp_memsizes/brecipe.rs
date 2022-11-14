@@ -8,7 +8,7 @@ use super::cpp_classes::Recipe::*;
 const CLASS_SIZE_WIIU: u32 = 0x27c;
 const CLASS_SIZE_NX: u32 = 0x320;
 
-const BRECIPE_OVERHEAD: u32 = 0x40;
+const BRECIPE_OVERHEAD: u32 = 0x58;
 
 pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
     let mut total_size = match endian {

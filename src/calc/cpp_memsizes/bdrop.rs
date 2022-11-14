@@ -8,7 +8,7 @@ use super::cpp_classes::DropTable::*;
 const CLASS_SIZE_WIIU: u32 = 0x27c;
 const CLASS_SIZE_NX: u32 = 0x320;
 
-const BDROP_OVERHEAD: u32 = 0xAC;
+const BDROP_OVERHEAD: u32 = 0xcc;
 
 pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
     let mut total_size = match endian {

@@ -14,7 +14,9 @@ use super::cpp_classes::Physics::*;
 const CLASS_SIZE_WIIU: u32 = 0x324;
 const CLASS_SIZE_NX: u32 = 0x470;
 
-const PARAMSET_OVERHEAD: u32 = 0x70; // 0x1A8;
+const PARAMSET_OVERHEAD: u32 = 0xdc; // for sizeof(phys::ParamSet) - shouldn't be related, but works for all tested mod files
+//const PARAMSET_OVERHEAD: u32 = 0x70; // valid for all vanilla files, but breaks some mod files for some reason
+//const PARAMSET_OVERHEAD: u32 = 0x1a8; // perhaps overly cautious overhead. fall back to this if 0xdc doesn't work
 
 pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
     let mut total_size = match endian {
