@@ -1,9 +1,11 @@
-use roead::aamp::{ParameterIO, ParameterList, ParameterObject};
-use crate::Endian;
-
 use std::mem::size_of;
 
-use super::cpp_classes::{AIProgram::*, agl::Parameter, Bool32, S32, U32, F32, Vector3f, SafeString};
+use roead::aamp::{ParameterIO, ParameterList, ParameterObject};
+
+use super::cpp_classes::{
+    agl::Parameter, AIProgram::*, Bool32, SafeString, Vector3f, F32, S32, U32,
+};
+use crate::Endian;
 
 const CLASS_SIZE_WIIU: u32 = 0x30c;
 const CLASS_SIZE_NX: u32 = 0x448;
@@ -22,21 +24,33 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
     let num_ai = ai.lists.len() as u32;
     if num_ai > 0 {
         for i in 0..num_ai {
-            parse_aiaction(ai.lists.get(format!("AI_{}", i)).unwrap(), &mut total_size, endian);
+            parse_aiaction(
+                ai.lists.get(format!("AI_{}", i)).unwrap(),
+                &mut total_size,
+                endian,
+            );
         }
     }
     let action = a.param_root.lists.get("Action").unwrap();
     let num_action = action.lists.len() as u32;
     if num_action > 0 {
         for i in 0..num_action {
-            parse_aiaction(action.lists.get(format!("Action_{}", i)).unwrap(), &mut total_size, endian);
+            parse_aiaction(
+                action.lists.get(format!("Action_{}", i)).unwrap(),
+                &mut total_size,
+                endian,
+            );
         }
     }
     if let Some(behavior) = a.param_root.lists.get("Behavior") {
         let num_behavior = behavior.lists.len() as u32;
         if num_behavior > 0 {
             for i in 0..num_behavior {
-                parse_behavior(behavior.lists.get(format!("Behavior_{}", i)).unwrap(), &mut total_size, endian);
+                parse_behavior(
+                    behavior.lists.get(format!("Behavior_{}", i)).unwrap(),
+                    &mut total_size,
+                    endian,
+                );
             }
         }
     }
@@ -44,7 +58,11 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
         let num_query = query.lists.len() as u32;
         if num_query > 0 {
             for i in 0..num_query {
-                parse_query(query.lists.get(format!("Query_{}", i)).unwrap(), &mut total_size, endian);
+                parse_query(
+                    query.lists.get(format!("Query_{}", i)).unwrap(),
+                    &mut total_size,
+                    endian,
+                );
             }
         }
     }

@@ -1,6 +1,4 @@
-use super::*;
-use super::agl::*;
-
+use super::{agl::*, *};
 
 #[repr(C)]
 pub struct RigidBodySetParam<T> {
@@ -136,15 +134,15 @@ struct Info<T> {
     link_entity_body: Parameter<T, SafeString<T>>,
     use_entity_shape: Parameter<T, Bool32>,
     shape_num: Parameter<T, Int>,
-    navmesh_val: u32, // enum
+    navmesh_val: u32,              // enum
     navmesh_sub_material_val: u32, // enum
     ground_hit_mask: u32,
 }
 
 #[repr(C)]
 pub struct RigidBodyParam<T> {
-    base: ParameterList<T>,
-    info: Info<T>,
+    base:   ParameterList<T>,
+    info:   Info<T>,
     shapes: SeadBuffer<T>,
 }
 
@@ -159,7 +157,7 @@ pub struct Form<T> {
     form_header_obj: ParameterObj<T>,
     shape_num: Parameter<T, Int>,
     form_type: Parameter<T, FixedSafeString32<T>>,
-    shape_params: SeadBuffer<T>
+    shape_params: SeadBuffer<T>,
 }
 
 #[repr(C)]

@@ -1,8 +1,10 @@
+use std::collections::BTreeMap;
+
+use serde::*;
+
 #[cfg(feature = "botw-data")]
 use crate::botw::FILE_HASHES;
 use crate::{ResourceSizeTable, CRC32};
-use serde::*;
-use std::collections::BTreeMap;
 
 impl ResourceSizeTable {
     /// *Requires the `json` feature.*

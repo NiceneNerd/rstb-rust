@@ -5,7 +5,7 @@
 //! Basic usage to manipulate an RSTB file:
 //! ```rust
 //! # fn main() -> rstb::Result<()> {
-//! use rstb::{ResourceSizeTable, Endian};
+//! use rstb::{Endian, ResourceSizeTable};
 //! let buf: Vec<u8> = std::fs::read("test/ResourceSizeTable.product.rsizetable")?;
 //! // Read RSTB from data, can automatically decompress if yaz0 compressed
 //! // (requires `yaz0` feature)
@@ -36,16 +36,15 @@
 //!   the method [`ResourceSizeTable::to_compressed_binary()`]. Note that the
 //!   yaz0 crate used is really slow so you're better off handling it some other
 //!   way if your use case permits (e.g. by using [roead](https://github.com/NiceneNerd/roead)).
-//! - **`json`**: Enables serializing/deserializing an RSTB file as JSON, using
-//!   the [`to_text()`](ResourceSizeTable::to_text()) and
-//!   [`from_text()`](ResourceSizeTable::from_text()) methods on [`ResourceSizeTable`].
-//!   Note that filenames can only be serialized if their CRC is known, which
-//!   requires the `botw-data` feature.
-//! - **`botw-data`**: Enables access to actual RSTB data from BOTW. This will
-//!   enable filename serialization in the [`to_text()`](ResourceSizeTable::to_text())
-//!   method if `json` is enabled, and more importantly enables the
-//!   [`new_from_stock()`](ResourceSizeTable::new_from_stock) method to create
-//!   a copy of the original BOTW RSTB (1.5.0 Wii U or 1.6.0 Switch).
+//! - **`json`**: Enables serializing/deserializing an RSTB file as JSON, using the
+//!   [`to_text()`](ResourceSizeTable::to_text()) and
+//!   [`from_text()`](ResourceSizeTable::from_text()) methods on [`ResourceSizeTable`]. Note that
+//!   filenames can only be serialized if their CRC is known, which requires the `botw-data`
+//!   feature.
+//! - **`botw-data`**: Enables access to actual RSTB data from BOTW. This will enable filename
+//!   serialization in the [`to_text()`](ResourceSizeTable::to_text()) method if `json` is enabled,
+//!   and more importantly enables the [`new_from_stock()`](ResourceSizeTable::new_from_stock)
+//!   method to create a copy of the original BOTW RSTB (1.5.0 Wii U or 1.6.0 Switch).
 #![feature(exclusive_range_pattern)]
 
 mod bin;
@@ -56,11 +55,13 @@ pub mod calc;
 mod json;
 mod str;
 
-pub use crate::str::FixedString;
+use std::{borrow::Borrow, collections::BTreeMap};
+
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
-use std::{borrow::Borrow, collections::BTreeMap};
 use thiserror::Error;
+
+pub use crate::str::FixedString;
 
 pub type Result<T> = std::result::Result<T, RstbError>;
 const CRC32: crc::Crc<u32> = crc::Crc::<u32>::new(&crc::CRC_32_ISO_HDLC);
@@ -128,11 +129,11 @@ pub enum RstbError {
 }
 
 /// Represents a *Breath of the Wild* resource size table
-#[derive(Debug, Default, Clone, PartialEq)]
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct ResourceSizeTable {
     #[cfg_attr(feature = "json", serde(with = "json"))]
-    pub crc_map: BTreeMap<u32, u32>,
+    pub crc_map:  BTreeMap<u32, u32>,
     pub name_map: BTreeMap<FixedString, u32>,
 }
 

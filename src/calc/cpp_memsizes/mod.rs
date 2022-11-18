@@ -16,7 +16,9 @@ const PARSE_CONST_NX: u32 = 0x168;
 #[allow(dead_code)]
 const fn cpp_align(list: &[u32], alignment: &u32) -> u32 {
     let mut size: u32 = 0;
-    let a: u32 = if *alignment > 0 { *alignment } else {
+    let a: u32 = if *alignment > 0 {
+        *alignment
+    } else {
         let mut i: usize = 0;
         let mut tmp: u32 = 0;
         while i < list.len() {
@@ -38,12 +40,10 @@ const fn cpp_align(list: &[u32], alignment: &u32) -> u32 {
             }
             size += tmp / a;
             temp_sum = tmp % a;
-        }
-        else if temp_sum + tmp > a {
+        } else if temp_sum + tmp > a {
             size += 1;
             temp_sum = tmp;
-        }
-        else {
+        } else {
             temp_sum += tmp;
         }
         i += 1;

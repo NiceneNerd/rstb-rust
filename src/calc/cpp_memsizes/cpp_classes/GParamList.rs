@@ -1,20 +1,19 @@
-use super::*;
-use super::agl::*;
+use super::{agl::*, *};
 
 #[repr(C)]
 struct GParamListObj<T> {
     vfptr: T,
-    mObj: ParameterObj<T>,
+    mObj:  ParameterObj<T>,
 }
 #[repr(C)]
 pub struct GParamListObjectAirWall<T> {
-    base: GParamListObj<T>,
+    base:   GParamListObj<T>,
     mLayer: Parameter<T, SafeString<T>>,
 }
 
 #[repr(C)]
 pub struct GParamListObjectAnimalFollowOffset<T> {
-    base: GParamListObj<T>,
+    base:   GParamListObj<T>,
     mLayer: Parameter<T, SafeString<T>>,
 }
 
@@ -1464,20 +1463,20 @@ pub struct GParamListObjectZora<T> {
 #[repr(C)]
 struct DirectionInfo<T> {
     mEntryPoint: Parameter<T, SafeString<T>>,
-    mWaitFrame: Parameter<T, F32>,
-    mSchedule: Parameter<T, SafeString<T>>,
-    mMoveAS: Parameter<T, SafeString<T>>,
-    mWaitAS: Parameter<T, SafeString<T>>,
+    mWaitFrame:  Parameter<T, F32>,
+    mSchedule:   Parameter<T, SafeString<T>>,
+    mMoveAS:     Parameter<T, SafeString<T>>,
+    mWaitAS:     Parameter<T, SafeString<T>>,
 }
 
 #[repr(C)]
 struct RoutePoint<T> {
-    mName: Parameter<T, SafeString<T>>,
-    mForward: DirectionInfo<T>,
+    mName:     Parameter<T, SafeString<T>>,
+    mForward:  DirectionInfo<T>,
     mBackward: DirectionInfo<T>,
 }
 
 #[repr(C)]
 struct RoutePoints<T> {
-    mStorage: [RoutePoint<T>; 29]
+    mStorage: [RoutePoint<T>; 29],
 }

@@ -1,5 +1,4 @@
-use super::*;
-use super::agl::*;
+use super::{agl::*, *};
 
 #[repr(C)]
 pub struct Unit<T> {

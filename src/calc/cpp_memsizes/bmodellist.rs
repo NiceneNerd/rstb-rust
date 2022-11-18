@@ -1,9 +1,9 @@
-use roead::aamp::ParameterIO;
-use crate::Endian;
-
 use std::mem::size_of;
 
+use roead::aamp::ParameterIO;
+
 use super::cpp_classes::ModelList::*;
+use crate::Endian;
 
 const CLASS_SIZE_WIIU: u32 = 0x508;
 const CLASS_SIZE_NX: u32 = 0x7d0;
@@ -25,15 +25,14 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
             modeldata_size = size_of::<ModelData<u32>>() as u32;
             partial_size = size_of::<Partial<u32>>() as u32;
             unit_size = size_of::<Unit<u32>>() as u32;
-        },
+        }
         Endian::Little => {
             anmtarget_size = size_of::<AnmTarget<u64>>() as u32;
             modeldata_size = size_of::<ModelData<u64>>() as u32;
             partial_size = size_of::<Partial<u64>>() as u32;
             unit_size = size_of::<Unit<u64>>() as u32;
-        },
+        }
     }
-
 
     if let Some(modeldata) = a.param_root.lists.get("ModelData") {
         let num_modeldata = modeldata.lists.len() as u32;
@@ -48,7 +47,7 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
                     } else {
                         total_size += num_unit * unit_size;
                     }
-                } 
+                }
             }
         }
     }

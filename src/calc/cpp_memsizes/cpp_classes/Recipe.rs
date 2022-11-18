@@ -1,5 +1,7 @@
-use super::{S32, SafeString, SeadBuffer};
-use super::agl::{ParameterObj, Parameter};
+use super::{
+    agl::{Parameter, ParameterObj},
+    SafeString, SeadBuffer, S32,
+};
 
 #[repr(C)]
 pub struct Table<T> {
@@ -12,5 +14,5 @@ pub struct Table<T> {
 #[repr(C)]
 pub struct Item<T> {
     name: Parameter<T, SafeString<T>>,
-    num: Parameter<T, S32>,
+    num:  Parameter<T, S32>,
 }

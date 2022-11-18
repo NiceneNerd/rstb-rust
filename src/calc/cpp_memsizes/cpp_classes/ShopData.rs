@@ -1,5 +1,7 @@
-use super::{Bool32, S32, SafeString, SeadBuffer};
-use super::agl::{ParameterObj, Parameter};
+use super::{
+    agl::{Parameter, ParameterObj},
+    Bool32, SafeString, SeadBuffer, S32,
+};
 
 #[repr(C)]
 pub struct Table<T> {

@@ -1,9 +1,9 @@
-use roead::aamp::ParameterIO;
-use crate::Endian;
-
 use std::mem::size_of;
 
+use roead::aamp::ParameterIO;
+
 use super::cpp_classes::ASList::*;
+use crate::Endian;
 
 const CLASS_SIZE_WIIU: u32 = 0x2f4;
 const CLASS_SIZE_NX: u32 = 0x410;
@@ -17,7 +17,13 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
     };
     total_size += BASLIST_OVERHEAD;
     let a = ParameterIO::from_binary(bytes).unwrap();
-    let (asdefine_size, cfdefine_size, cfpost_size, cfexcept_size, addres_size): (u32, u32, u32, u32, u32);
+    let (asdefine_size, cfdefine_size, cfpost_size, cfexcept_size, addres_size): (
+        u32,
+        u32,
+        u32,
+        u32,
+        u32,
+    );
     match endian {
         Endian::Big => {
             asdefine_size = size_of::<ASDefine<u32>>() as u32;
@@ -25,14 +31,14 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
             cfpost_size = size_of::<CFPost<u32>>() as u32;
             cfexcept_size = size_of::<CFExcept<u32>>() as u32;
             addres_size = size_of::<AddRes<u32>>() as u32;
-        },
+        }
         Endian::Little => {
             asdefine_size = size_of::<ASDefine<u64>>() as u32;
             cfdefine_size = size_of::<CFDefine<u64>>() as u32;
             cfpost_size = size_of::<CFPost<u64>>() as u32;
             cfexcept_size = size_of::<CFExcept<u64>>() as u32;
             addres_size = size_of::<AddRes<u64>>() as u32;
-        },
+        }
     }
 
     if let Some(asdefine_list) = a.param_root.lists.get("ASDefines") {

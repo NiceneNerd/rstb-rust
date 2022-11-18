@@ -54,25 +54,19 @@
 //! Wii U files, even if they are actually in little endian, and pass
 //! `Endian:Little` for Switch files, even if they are actually in big endian.
 
-mod info;
 #[cfg(feature = "complex")]
 mod cpp_memsizes;
+mod info;
 
-use crate::{Endian, Result};
-use info::{get_factory_info, ParseSize};
+use std::path::Path;
+
 #[cfg(feature = "complex")]
 use cpp_memsizes::{
-    baiprog,
-    baslist,
-    bdrop,
-    bgparamlist,
-    bmodellist,
-    bphysics,
-    brecipe,
-    bshop,
-    bxml
+    baiprog, baslist, bdrop, bgparamlist, bmodellist, bphysics, brecipe, bshop, bxml,
 };
-use std::path::Path;
+use info::{get_factory_info, ParseSize};
+
+use crate::{Endian, Result};
 
 #[inline]
 fn round_32(size: usize) -> u32 {
@@ -82,7 +76,7 @@ fn round_32(size: usize) -> u32 {
 /// Infallibly calculate an RSTB value from a file on disk, returning `None` if
 /// the type is not supported.
 pub fn calc_from_file<P: AsRef<Path>>(file: P, endian: Endian) -> Result<Option<u32>> {
-    Ok(calc_from_bytes_and_name(
+    Ok(calc_from_slice_and_name(
         &std::fs::read(file.as_ref()).unwrap(),
         file.as_ref()
             .file_name()
@@ -104,14 +98,90 @@ pub fn calc_from_slice_and_name<B: AsRef<[u8]>>(
     if bytes.len() < 8 {
         None
     } else {
-        calc_from_bytes_and_name(bytes, name, endian)
+        calc_or_estimate_from_bytes_and_name(bytes, name, endian, false)
     }
 }
 
 /// Infallibly calculate an RSTB value from an uncompressed file size and
 /// filename, returning `None` if the type is not supported.
-pub fn calc_from_bytes_and_name(bytes: &[u8], name: &str, endian: Endian) -> Option<u32> {
-    calc_or_estimate_from_bytes_and_name(bytes, name, endian, false)
+pub fn calc_from_size_and_name(filesize: usize, name: &str, endian: Endian) -> Option<u32> {
+    calc_or_estimate_from_size_and_name(filesize, name, endian, false)
+}
+
+fn calc_or_estimate_from_size_and_name(
+    filesize: usize,
+    name: &str,
+    endian: Endian,
+    estimate: bool,
+) -> Option<u32> {
+    if let Some(dot_pos) = name.find('.') {
+        let rounded = round_32(filesize);
+        let raw_ext = &name[dot_pos + 1..];
+        let ext = match raw_ext {
+            "sarc" => "sarc",
+            _ => {
+                if let Some(ext) = raw_ext.strip_prefix('s') {
+                    ext
+                } else {
+                    raw_ext
+                }
+            }
+        };
+        let (size, parse_size) = get_factory_info(ext, endian);
+        match parse_size {
+            ParseSize::Simple(parse_size) => {
+                Some(match endian {
+                    Endian::Big => {
+                        rounded
+                            + 0xe4
+                            + size
+                            + parse_size
+                            + match ext {
+                                "beventpack" => 0xe0,
+                                "bfevfl" => 0x58,
+                                "hkrb" => 40,
+                                "bdmgparam" => (rounded as f32 * 0.666) as u32,
+                                _ => 0,
+                            }
+                    }
+                    Endian::Little => {
+                        rounded
+                            + 0x168
+                            + size
+                            + parse_size
+                            + match ext {
+                                "bdmgparam" => (rounded as f32 * 0.666) as u32,
+                                _ => 0,
+                            }
+                    }
+                })
+            }
+            ParseSize::Complex => {
+                if estimate {
+                    match ext {
+                        "baniminfo" => {
+                            Some(
+                                ((rounded as f32 * (if filesize > 36864 { 1.5 } else { 4.0 }))
+                                    as u32
+                                    + 0xe4
+                                    + 0x24c)
+                                    * match endian {
+                                        Endian::Big => 1,
+                                        Endian::Little => 2,
+                                    },
+                            )
+                        }
+                        "bfres" => Some(estimate_bfres(filesize, endian)),
+                        _ => estimate_aamp(filesize, name, endian),
+                    }
+                } else {
+                    None
+                }
+            }
+        }
+    } else {
+        None
+    }
 }
 
 /// Infallibly calculate *or* estimate an RSTB value from a file on disk,
@@ -126,6 +196,12 @@ pub fn estimate_from_file<P: AsRef<Path>>(file: P, endian: Endian) -> Result<Opt
             .unwrap(),
         endian,
     ))
+}
+
+/// Infallibly calculate *or* estimate an RSTB value from an uncompressed file size and
+/// filename, returning `None` if the type is not supported.
+pub fn estimate_from_size_and_name(filesize: usize, name: &str, endian: Endian) -> Option<u32> {
+    calc_or_estimate_from_size_and_name(filesize, name, endian, true)
 }
 
 /// Infallibly calculate *or* estimate an RSTB value from a byte slice and
@@ -158,7 +234,7 @@ fn calc_or_estimate_from_bytes_and_name(
     if let Some(dot_pos) = name.find('.') {
         let filesize = match &bytes[0..4] {
             b"Yaz0" => u32::from_be_bytes(bytes[4..8].try_into().unwrap()) as usize,
-            _ => bytes.len()
+            _ => bytes.len(),
         };
         let rounded = round_32(filesize);
         let raw_ext = &name[dot_pos + 1..];
@@ -174,61 +250,85 @@ fn calc_or_estimate_from_bytes_and_name(
         };
         let (size, parse_size) = get_factory_info(ext, endian);
         match parse_size {
-            ParseSize::Simple(parse_size) => Some(match endian {
-                Endian::Big => {
-                    rounded
-                        + 0xe4
-                        + size
-                        + parse_size
-                        + match ext {
-                            "beventpack" => 0xe0,
-                            "bfevfl" => 0x58,
-                            "hkrb" => 40,
-                            //"bdmgparam" => (rounded as f32 * 0.666) as u32,
-                            _ => 0,
-                        }
-                }
-                Endian::Little => {
-                    rounded
-                        + 0x168
-                        + size
-                        + parse_size
-                        + match ext {
-                            "bdmgparam" => (rounded as f32 * 0.666) as u32,
-                            _ => 0,
-                        }
-                }
-            }),
+            ParseSize::Simple(parse_size) => {
+                Some(match endian {
+                    Endian::Big => {
+                        rounded
+                            + 0xe4
+                            + size
+                            + parse_size
+                            + match ext {
+                                "beventpack" => 0xe0,
+                                "bfevfl" => 0x58,
+                                "hkrb" => 40,
+                                //"bdmgparam" => (rounded as f32 * 0.666) as u32,
+                                _ => 0,
+                            }
+                    }
+                    Endian::Little => {
+                        rounded
+                            + 0x168
+                            + size
+                            + parse_size
+                            + match ext {
+                                "bdmgparam" => (rounded as f32 * 0.666) as u32,
+                                _ => 0,
+                            }
+                    }
+                })
+            }
             ParseSize::Complex => {
                 if estimate {
                     match ext {
+                        #[cfg(feature = "complex")]
                         "baiprog" => Some(rounded + baiprog::parse_size(bytes, endian)),
-                        "baniminfo" => Some(
-                            ((rounded as f32 * (if filesize > 36864 { 1.5 } else { 4.0 })) as u32
-                                + 0xe4
-                                + 0x24c)
-                                * match endian {
-                                    Endian::Big => 1,
-                                    Endian::Little => 2,
-                                },
-                        ),
+                        "baniminfo" => {
+                            Some(
+                                ((rounded as f32 * (if filesize > 36864 { 1.5 } else { 4.0 }))
+                                    as u32
+                                    + 0xe4
+                                    + 0x24c)
+                                    * match endian {
+                                        Endian::Big => 1,
+                                        Endian::Little => 2,
+                                    },
+                            )
+                        }
+                        #[cfg(feature = "complex")]
                         "baslist" => Some(rounded + baslist::parse_size(bytes, endian)),
+                        #[cfg(feature = "complex")]
                         "bdrop" => Some(rounded + bdrop::parse_size(bytes, endian)),
                         "bfres" => Some(estimate_bfres(filesize, endian)),
+                        #[cfg(feature = "complex")]
                         "bgparamlist" => Some(rounded + bgparamlist::parse_size(bytes, endian)),
+                        #[cfg(feature = "complex")]
                         "bmodellist" => Some(rounded + bmodellist::parse_size(bytes, endian)),
+                        #[cfg(feature = "complex")]
                         "bphysics" => Some(rounded + bphysics::parse_size(bytes, endian)),
+                        #[cfg(feature = "complex")]
                         "brecipe" => Some(rounded + brecipe::parse_size(bytes, endian)),
+                        #[cfg(feature = "complex")]
                         "bshop" => Some(rounded + bshop::parse_size(bytes, endian)),
+                        #[cfg(feature = "complex")]
                         "bxml" => Some(rounded + bxml::parse_size(bytes, endian)),
-                        "hknm2" => Some(rounded + match endian {
-                            Endian::Big => 0x19c,
-                            Endian::Little => 0x290
-                        }),
-                        "hksc" => Some(rounded + match endian {
-                            Endian::Big => 0x74cc,
-                            Endian::Little => 0x9c00
-                        }),
+                        "hknm2" => {
+                            Some(
+                                rounded
+                                    + match endian {
+                                        Endian::Big => 0x19c,
+                                        Endian::Little => 0x290,
+                                    },
+                            )
+                        }
+                        "hksc" => {
+                            Some(
+                                rounded
+                                    + match endian {
+                                        Endian::Big => 0x74cc,
+                                        Endian::Little => 0x9c00,
+                                    },
+                            )
+                        }
                         _ => estimate_aamp(filesize, name, endian),
                     }
                 } else {
@@ -254,71 +354,87 @@ fn estimate_aamp(filesize: usize, name: &str, endian: Endian) -> Option<u32> {
             * f32::max(4.0 * (size / 1388.0).floor(), 3.0)
     } else {
         size *= match ext {
-            "baiprog" => match size as usize {
-                (0..380) => 7.0,
-                (380..400) => 6.0,
-                (400..450) => 5.5,
-                (450..600) => 5.0,
-                (600..1_000) => 4.0,
-                (1_000..1_750) => 3.5,
-                _ => 3.0,
-            },
-            "bas" => match size as usize {
-                (0..100) => 20.0,
-                (100..200) => 12.5,
-                (200..300) => 10.0,
-                (300..600) => 8.0,
-                (600..1_500) => 6.0,
-                (1_500..2_000) => 5.5,
-                (2_000..15_000) => 5.0,
-                _ => 4.5,
-            },
-            "baslist" => match size as usize {
-                (0..100) => 15.0,
-                (100..200) => 10.0,
-                (200..300) => 8.0,
-                (300..500) => 6.0,
-                (500..800) => 5.0,
-                (800..4_000) => 4.0,
-                _ => 3.5,
-            },
-            "bdrop" => match size as usize {
-                (0..200) => 8.5,
-                (200..250) => 7.0,
-                (250..350) => 6.0,
-                (350..450) => 5.25,
-                (450..850) => 4.5,
-                _ => 4.0,
-            },
-            "bgparamlist" => match size as usize {
-                (0..100) => 20.0,
-                (100..150) => 12.0,
-                (150..250) => 10.0,
-                (250..350) => 8.0,
-                (350..450) => 7.0,
-                _ => 6.0,
-            },
-            "brecipe" => match size as usize {
-                (0..100) => 12.5,
-                (100..160) => 8.5,
-                (160..200) => 7.5,
-                (200..215) => 7.0,
-                _ => 6.5,
-            },
-            "bshop" => match size as usize {
-                (0..200) => 7.25,
-                (200..400) => 6.0,
-                (400..500) => 5.0,
-                _ => 4.05,
-            },
-            "bxml" => match size as usize {
-                (0..350) => 6.0,
-                (350..450) => 5.0,
-                (450..550) => 4.5,
-                (550..650) => 4.0,
-                (650..800) => 3.5,
-                _ => 3.0,
-            },
+            "baiprog" => {
+                match size as usize {
+                    (0..380) => 7.0,
+                    (380..400) => 6.0,
+                    (400..450) => 5.5,
+                    (450..600) => 5.0,
+                    (600..1_000) => 4.0,
+                    (1_000..1_750) => 3.5,
+                    _ => 3.0,
+                }
+            }
+            "bas" => {
+                match size as usize {
+                    (0..100) => 20.0,
+                    (100..200) => 12.5,
+                    (200..300) => 10.0,
+                    (300..600) => 8.0,
+                    (600..1_500) => 6.0,
+                    (1_500..2_000) => 5.5,
+                    (2_000..15_000) => 5.0,
+                    _ => 4.5,
+                }
+            }
+            "baslist" => {
+                match size as usize {
+                    (0..100) => 15.0,
+                    (100..200) => 10.0,
+                    (200..300) => 8.0,
+                    (300..500) => 6.0,
+                    (500..800) => 5.0,
+                    (800..4_000) => 4.0,
+                    _ => 3.5,
+                }
+            }
+            "bdrop" => {
+                match size as usize {
+                    (0..200) => 8.5,
+                    (200..250) => 7.0,
+                    (250..350) => 6.0,
+                    (350..450) => 5.25,
+                    (450..850) => 4.5,
+                    _ => 4.0,
+                }
+            }
+            "bgparamlist" => {
+                match size as usize {
+                    (0..100) => 20.0,
+                    (100..150) => 12.0,
+                    (150..250) => 10.0,
+                    (250..350) => 8.0,
+                    (350..450) => 7.0,
+                    _ => 6.0,
+                }
+            }
+            "brecipe" => {
+                match size as usize {
+                    (0..100) => 12.5,
+                    (100..160) => 8.5,
+                    (160..200) => 7.5,
+                    (200..215) => 7.0,
+                    _ => 6.5,
+                }
+            }
+            "bshop" => {
+                match size as usize {
+                    (0..200) => 7.25,
+                    (200..400) => 6.0,
+                    (400..500) => 5.0,
+                    _ => 4.05,
+                }
+            }
+            "bxml" => {
+                match size as usize {
+                    (0..350) => 6.0,
+                    (350..450) => 5.0,
+                    (450..550) => 4.5,
+                    (550..650) => 4.0,
+                    (650..800) => 3.5,
+                    _ => 3.0,
+                }
+            }
             _ => return None,
         };
     }
@@ -363,10 +479,11 @@ fn estimate_bfres(filesize: usize, endian: Endian) -> u32 {
 
 #[cfg(test)]
 mod tests {
+    use std::fs::read;
+
     use all_asserts::assert_ge;
 
     use crate::Endian;
-    use std::fs::read;
 
     #[test]
     fn calc_sizes() {
@@ -397,6 +514,47 @@ mod tests {
 
     #[test]
     fn estimate_sizes() {
+        assert_ge!(
+            super::estimate_from_size_and_name(42496, "Model/Animal_Bass.Tex1.sbfres", Endian::Big),
+            Some(42756) // Functional value lower than stock
+        );
+        assert_ge!(
+            super::estimate_from_size_and_name(
+                7735632,
+                "Model/DgnMrgPrt_Dungeon061.bfres",
+                Endian::Little,
+            ),
+            Some(8658192)
+        );
+        assert_ge!(
+            super::estimate_from_size_and_name(
+                7735632,
+                "Model/DgnMrgPrt_Dungeon061.bfres",
+                Endian::Little,
+            ),
+            Some(8658192)
+        );
+        assert_ge!(
+            super::estimate_from_size_and_name(
+                1408,
+                "Actor/GeneralParamList/Weapon_Bow_071.bgparamlist",
+                Endian::Little,
+            ),
+            Some(8272)
+        );
+        assert_ge!(
+            super::estimate_from_size_and_name(
+                3540,
+                "Actor/AIProgram/NpcGerudoQueenBattle.baiprog",
+                Endian::Big,
+            ),
+            Some(9444)
+        );
+    }
+
+    #[cfg(feature = "complex")]
+    #[test]
+    fn estimate_sizes_complex() {
         assert_eq!(
             super::estimate_from_slice_and_name(
                 &std::fs::read("test/Animal_Bass.Tex1.sbfres").unwrap(),
@@ -482,7 +640,8 @@ mod tests {
     #[test]
     fn agl_size_tests() {
         use std::mem::size_of;
-        use crate::calc::cpp_memsizes::cpp_classes::{*, agl::*};
+
+        use crate::calc::cpp_memsizes::cpp_classes::{agl::*, *};
         assert_eq!(size_of::<ParameterList<u32>>(), 0x24);
         assert_eq!(size_of::<ParameterObj<u32>>(), 0x1c);
         assert_eq!(size_of::<ParameterBase<u32>>(), 0xc);
@@ -530,6 +689,7 @@ mod tests {
     #[test]
     fn baiprog_size_tests() {
         use std::mem::size_of;
+
         use crate::calc::cpp_memsizes::cpp_classes::AIProgram::*;
         assert_eq!(size_of::<AIActionDef<u32>>(), 0x6c);
         assert_eq!(size_of::<BehaviorDef<u32>>(), 0x54);
@@ -542,6 +702,7 @@ mod tests {
     #[test]
     fn baslist_size_tests() {
         use std::mem::size_of;
+
         use crate::calc::cpp_memsizes::cpp_classes::ASList::*;
         assert_eq!(size_of::<ASDefine<u32>>(), 0x58);
         assert_eq!(size_of::<CFPost<u32>>(), 0x54);
@@ -560,6 +721,7 @@ mod tests {
     #[test]
     fn bdrop_size_tests() {
         use std::mem::size_of;
+
         use crate::calc::cpp_memsizes::cpp_classes::DropTable::*;
         assert_eq!(size_of::<Table<u32>>(), 0x8c);
         assert_eq!(size_of::<Item<u32>>(), 0x28);
@@ -570,6 +732,7 @@ mod tests {
     #[test]
     fn bgplobj_size_tests() {
         use std::mem::size_of;
+
         use crate::calc::cpp_memsizes::cpp_classes::GParamList::*;
         assert_eq!(size_of::<GParamListObjectAirWall<u32>>(), 0x38);
         assert_eq!(size_of::<GParamListObjectAnimalFollowOffset<u32>>(), 0x38);
@@ -732,6 +895,7 @@ mod tests {
     #[test]
     fn bmodellist_size_tests() {
         use std::mem::size_of;
+
         use crate::calc::cpp_memsizes::cpp_classes::ModelList::*;
         assert_eq!(size_of::<Unit<u32>>(), 0x4c);
         assert_eq!(size_of::<ModelData<u32>>(), 0x84);
@@ -746,6 +910,7 @@ mod tests {
     #[test]
     fn bphysics_size_tests() {
         use std::mem::size_of;
+
         use crate::calc::cpp_memsizes::cpp_classes::Physics::*;
         assert_eq!(size_of::<RigidBodySetParam<u32>>(), 0xa4);
         assert_eq!(size_of::<CharacterControllerParam<u32>>(), 0x2d4);
@@ -780,6 +945,7 @@ mod tests {
     #[test]
     fn brecipe_size_tests() {
         use std::mem::size_of;
+
         use crate::calc::cpp_memsizes::cpp_classes::Recipe::*;
         assert_eq!(size_of::<Table<u32>>(), 0x4c);
         assert_eq!(size_of::<Item<u32>>(), 0x28);
@@ -790,6 +956,7 @@ mod tests {
     #[test]
     fn bshop_size_tests() {
         use std::mem::size_of;
+
         use crate::calc::cpp_memsizes::cpp_classes::ShopData::*;
         assert_eq!(size_of::<Table<u32>>(), 0x4c);
         assert_eq!(size_of::<Item<u32>>(), 0x68);
@@ -800,12 +967,15 @@ mod tests {
     #[test]
     fn test_all_baiprog() {
         use std::collections::HashSet;
-        use roead::{sarc, aamp::ParameterIO};
-        use crate::ResourceSizeTable;
+
         use glob::glob;
+        use roead::{aamp::ParameterIO, sarc};
+
+        use crate::ResourceSizeTable;
         let mut result: HashSet<String> = HashSet::new();
 
-        let root = "E:/Users/chodn/Documents/ISOs - WiiU/The Legend of Zelda Breath of the Wild (UPDATE DATA) (v208) (USA)/content";
+        let root = "E:/Users/chodn/Documents/ISOs - WiiU/The Legend of Zelda Breath of the Wild \
+                    (UPDATE DATA) (v208) (USA)/content";
         let rstb_path = root.to_owned() + "/System/Resource/ResourceSizeTable.product.srsizetable";
         let rstable = ResourceSizeTable::from_binary(std::fs::read(rstb_path).unwrap()).unwrap();
         for entry in glob(&(root.to_owned() + "/Actor/Pack/*.sbactorpack")).unwrap() {
@@ -813,20 +983,41 @@ mod tests {
                 Ok(path) => {
                     let actorname = path.file_stem().unwrap().to_str().unwrap();
                     let sarc = sarc::Sarc::new(std::fs::read(&path).unwrap()).unwrap();
-                    let bxml = ParameterIO::from_binary(sarc.get_data(&format!("Actor/ActorLink/{}.bxml", actorname)).unwrap().unwrap()).unwrap();
-                    let user = bxml.param_root.objects.get("LinkTarget").unwrap().get("AIProgramUser").unwrap().as_str().unwrap();
+                    let bxml = ParameterIO::from_binary(
+                        sarc.get_data(&format!("Actor/ActorLink/{}.bxml", actorname))
+                            .unwrap()
+                            .unwrap(),
+                    )
+                    .unwrap();
+                    let user = bxml
+                        .param_root
+                        .objects
+                        .get("LinkTarget")
+                        .unwrap()
+                        .get("AIProgramUser")
+                        .unwrap()
+                        .as_str()
+                        .unwrap();
                     let param_name = format!("Actor/AIProgram/{}.baiprog", user);
                     if param_name.contains("Dummy") | result.contains(&param_name) {
                         continue;
                     }
                     if let Some(o_file) = sarc.get_data(&param_name).unwrap() {
                         if let Some(rstb_entry) = rstable.get(param_name.as_str()) {
-                            let calc_size = super::estimate_from_bytes_and_name(o_file, &param_name, Endian::Big).unwrap();
+                            let calc_size = super::estimate_from_bytes_and_name(
+                                o_file,
+                                &param_name,
+                                Endian::Big,
+                            )
+                            .unwrap();
                             assert_ge!(calc_size, rstb_entry);
                             result.insert(param_name);
-                        } else { println!("{} not in RSTB???", &param_name); continue; }
+                        } else {
+                            println!("{} not in RSTB???", &param_name);
+                            continue;
+                        }
                     }
-                },
+                }
                 Err(_) => println!("File error...?"),
             }
         }
@@ -835,12 +1026,15 @@ mod tests {
     #[test]
     fn test_all_baslist() {
         use std::collections::HashSet;
-        use roead::{sarc, aamp::ParameterIO};
-        use crate::ResourceSizeTable;
+
         use glob::glob;
+        use roead::{aamp::ParameterIO, sarc};
+
+        use crate::ResourceSizeTable;
         let mut result: HashSet<String> = HashSet::new();
 
-        let root = "E:/Users/chodn/Documents/ISOs - WiiU/The Legend of Zelda Breath of the Wild (UPDATE DATA) (v208) (USA)/content";
+        let root = "E:/Users/chodn/Documents/ISOs - WiiU/The Legend of Zelda Breath of the Wild \
+                    (UPDATE DATA) (v208) (USA)/content";
         let rstb_path = root.to_owned() + "/System/Resource/ResourceSizeTable.product.srsizetable";
         let rstable = ResourceSizeTable::from_binary(std::fs::read(rstb_path).unwrap()).unwrap();
         for entry in glob(&(root.to_owned() + "/Actor/Pack/*.sbactorpack")).unwrap() {
@@ -848,20 +1042,41 @@ mod tests {
                 Ok(path) => {
                     let actorname = path.file_stem().unwrap().to_str().unwrap();
                     let sarc = sarc::Sarc::new(std::fs::read(&path).unwrap()).unwrap();
-                    let bxml = ParameterIO::from_binary(sarc.get_data(&format!("Actor/ActorLink/{}.bxml", actorname)).unwrap().unwrap()).unwrap();
-                    let user = bxml.param_root.objects.get("LinkTarget").unwrap().get("ASUser").unwrap().as_str().unwrap();
+                    let bxml = ParameterIO::from_binary(
+                        sarc.get_data(&format!("Actor/ActorLink/{}.bxml", actorname))
+                            .unwrap()
+                            .unwrap(),
+                    )
+                    .unwrap();
+                    let user = bxml
+                        .param_root
+                        .objects
+                        .get("LinkTarget")
+                        .unwrap()
+                        .get("ASUser")
+                        .unwrap()
+                        .as_str()
+                        .unwrap();
                     let param_name = format!("Actor/ASList/{}.baslist", user);
                     if param_name.contains("Dummy") | result.contains(&param_name) {
                         continue;
                     }
                     if let Some(o_file) = sarc.get_data(&param_name).unwrap() {
                         if let Some(rstb_entry) = rstable.get(param_name.as_str()) {
-                            let calc_size = super::estimate_from_bytes_and_name(o_file, &param_name, Endian::Big).unwrap();
+                            let calc_size = super::estimate_from_bytes_and_name(
+                                o_file,
+                                &param_name,
+                                Endian::Big,
+                            )
+                            .unwrap();
                             assert_ge!(calc_size, rstb_entry);
                             result.insert(param_name);
-                        } else { println!("{} not in RSTB???", &param_name); continue; }
+                        } else {
+                            println!("{} not in RSTB???", &param_name);
+                            continue;
+                        }
                     }
-                },
+                }
                 Err(_) => println!("File error...?"),
             }
         }
@@ -870,12 +1085,15 @@ mod tests {
     #[test]
     fn test_all_bdrop() {
         use std::collections::HashSet;
-        use roead::{sarc, aamp::ParameterIO};
-        use crate::ResourceSizeTable;
+
         use glob::glob;
+        use roead::{aamp::ParameterIO, sarc};
+
+        use crate::ResourceSizeTable;
         let mut result: HashSet<String> = HashSet::new();
 
-        let root = "E:/Users/chodn/Documents/ISOs - WiiU/The Legend of Zelda Breath of the Wild (UPDATE DATA) (v208) (USA)/content";
+        let root = "E:/Users/chodn/Documents/ISOs - WiiU/The Legend of Zelda Breath of the Wild \
+                    (UPDATE DATA) (v208) (USA)/content";
         let rstb_path = root.to_owned() + "/System/Resource/ResourceSizeTable.product.srsizetable";
         let rstable = ResourceSizeTable::from_binary(std::fs::read(rstb_path).unwrap()).unwrap();
         for entry in glob(&(root.to_owned() + "/Actor/Pack/*.sbactorpack")).unwrap() {
@@ -883,20 +1101,41 @@ mod tests {
                 Ok(path) => {
                     let actorname = path.file_stem().unwrap().to_str().unwrap();
                     let sarc = sarc::Sarc::new(std::fs::read(&path).unwrap()).unwrap();
-                    let bxml = ParameterIO::from_binary(sarc.get_data(&format!("Actor/ActorLink/{}.bxml", actorname)).unwrap().unwrap()).unwrap();
-                    let user = bxml.param_root.objects.get("LinkTarget").unwrap().get("DropTableUser").unwrap().as_str().unwrap();
+                    let bxml = ParameterIO::from_binary(
+                        sarc.get_data(&format!("Actor/ActorLink/{}.bxml", actorname))
+                            .unwrap()
+                            .unwrap(),
+                    )
+                    .unwrap();
+                    let user = bxml
+                        .param_root
+                        .objects
+                        .get("LinkTarget")
+                        .unwrap()
+                        .get("DropTableUser")
+                        .unwrap()
+                        .as_str()
+                        .unwrap();
                     let param_name = format!("Actor/DropTable/{}.bdrop", user);
                     if param_name.contains("Dummy") | result.contains(&param_name) {
                         continue;
                     }
                     if let Some(o_file) = sarc.get_data(&param_name).unwrap() {
                         if let Some(rstb_entry) = rstable.get(param_name.as_str()) {
-                            let calc_size = super::estimate_from_bytes_and_name(o_file, &param_name, Endian::Big).unwrap();
+                            let calc_size = super::estimate_from_bytes_and_name(
+                                o_file,
+                                &param_name,
+                                Endian::Big,
+                            )
+                            .unwrap();
                             assert_ge!(calc_size, rstb_entry);
                             result.insert(param_name);
-                        } else { println!("{} not in RSTB???", &param_name); continue; }
+                        } else {
+                            println!("{} not in RSTB???", &param_name);
+                            continue;
+                        }
                     }
-                },
+                }
                 Err(_) => println!("File error...?"),
             }
         }
@@ -905,12 +1144,15 @@ mod tests {
     #[test]
     fn test_all_bgparamlist() {
         use std::collections::HashSet;
-        use roead::{sarc, aamp::ParameterIO};
-        use crate::ResourceSizeTable;
+
         use glob::glob;
+        use roead::{aamp::ParameterIO, sarc};
+
+        use crate::ResourceSizeTable;
         let mut result: HashSet<String> = HashSet::new();
 
-        let root = "E:/Users/chodn/Documents/ISOs - WiiU/The Legend of Zelda Breath of the Wild (UPDATE DATA) (v208) (USA)/content";
+        let root = "E:/Users/chodn/Documents/ISOs - WiiU/The Legend of Zelda Breath of the Wild \
+                    (UPDATE DATA) (v208) (USA)/content";
         let rstb_path = root.to_owned() + "/System/Resource/ResourceSizeTable.product.srsizetable";
         let rstable = ResourceSizeTable::from_binary(std::fs::read(rstb_path).unwrap()).unwrap();
         for entry in glob(&(root.to_owned() + "/Actor/Pack/*.sbactorpack")).unwrap() {
@@ -918,20 +1160,41 @@ mod tests {
                 Ok(path) => {
                     let actorname = path.file_stem().unwrap().to_str().unwrap();
                     let sarc = sarc::Sarc::new(std::fs::read(&path).unwrap()).unwrap();
-                    let bxml = ParameterIO::from_binary(sarc.get_data(&format!("Actor/ActorLink/{}.bxml", actorname)).unwrap().unwrap()).unwrap();
-                    let user = bxml.param_root.objects.get("LinkTarget").unwrap().get("GParamUser").unwrap().as_str().unwrap();
+                    let bxml = ParameterIO::from_binary(
+                        sarc.get_data(&format!("Actor/ActorLink/{}.bxml", actorname))
+                            .unwrap()
+                            .unwrap(),
+                    )
+                    .unwrap();
+                    let user = bxml
+                        .param_root
+                        .objects
+                        .get("LinkTarget")
+                        .unwrap()
+                        .get("GParamUser")
+                        .unwrap()
+                        .as_str()
+                        .unwrap();
                     let param_name = format!("Actor/GeneralParamList/{}.bgparamlist", user);
                     if param_name.contains("Dummy") | result.contains(&param_name) {
                         continue;
                     }
                     if let Some(o_file) = sarc.get_data(&param_name).unwrap() {
                         if let Some(rstb_entry) = rstable.get(param_name.as_str()) {
-                            let calc_size = super::estimate_from_bytes_and_name(o_file, &param_name, Endian::Big).unwrap();
+                            let calc_size = super::estimate_from_bytes_and_name(
+                                o_file,
+                                &param_name,
+                                Endian::Big,
+                            )
+                            .unwrap();
                             assert_ge!(calc_size, rstb_entry);
                             result.insert(param_name);
-                        } else { println!("{} not in RSTB???", &param_name); continue; }
+                        } else {
+                            println!("{} not in RSTB???", &param_name);
+                            continue;
+                        }
                     }
-                },
+                }
                 Err(_) => println!("File error...?"),
             }
         }
@@ -940,12 +1203,15 @@ mod tests {
     #[test]
     fn test_all_bmodellist() {
         use std::collections::HashSet;
-        use roead::{sarc, aamp::ParameterIO};
-        use crate::ResourceSizeTable;
+
         use glob::glob;
+        use roead::{aamp::ParameterIO, sarc};
+
+        use crate::ResourceSizeTable;
         let mut result: HashSet<String> = HashSet::new();
 
-        let root = "E:/Users/chodn/Documents/ISOs - WiiU/The Legend of Zelda Breath of the Wild (UPDATE DATA) (v208) (USA)/content";
+        let root = "E:/Users/chodn/Documents/ISOs - WiiU/The Legend of Zelda Breath of the Wild \
+                    (UPDATE DATA) (v208) (USA)/content";
         let rstb_path = root.to_owned() + "/System/Resource/ResourceSizeTable.product.srsizetable";
         let rstable = ResourceSizeTable::from_binary(std::fs::read(rstb_path).unwrap()).unwrap();
         for entry in glob(&(root.to_owned() + "/Actor/Pack/*.sbactorpack")).unwrap() {
@@ -953,20 +1219,41 @@ mod tests {
                 Ok(path) => {
                     let actorname = path.file_stem().unwrap().to_str().unwrap();
                     let sarc = sarc::Sarc::new(std::fs::read(&path).unwrap()).unwrap();
-                    let bxml = ParameterIO::from_binary(sarc.get_data(&format!("Actor/ActorLink/{}.bxml", actorname)).unwrap().unwrap()).unwrap();
-                    let user = bxml.param_root.objects.get("LinkTarget").unwrap().get("ModelUser").unwrap().as_str().unwrap();
+                    let bxml = ParameterIO::from_binary(
+                        sarc.get_data(&format!("Actor/ActorLink/{}.bxml", actorname))
+                            .unwrap()
+                            .unwrap(),
+                    )
+                    .unwrap();
+                    let user = bxml
+                        .param_root
+                        .objects
+                        .get("LinkTarget")
+                        .unwrap()
+                        .get("ModelUser")
+                        .unwrap()
+                        .as_str()
+                        .unwrap();
                     let param_name = format!("Actor/ModelList/{}.bmodellist", user);
                     if param_name.contains("Dummy") | result.contains(&param_name) {
                         continue;
                     }
                     if let Some(o_file) = sarc.get_data(&param_name).unwrap() {
                         if let Some(rstb_entry) = rstable.get(param_name.as_str()) {
-                            let calc_size = super::estimate_from_bytes_and_name(o_file, &param_name, Endian::Big).unwrap();
+                            let calc_size = super::estimate_from_bytes_and_name(
+                                o_file,
+                                &param_name,
+                                Endian::Big,
+                            )
+                            .unwrap();
                             assert_ge!(calc_size, rstb_entry);
                             result.insert(param_name);
-                        } else { println!("{} not in RSTB???", &param_name); continue; }
+                        } else {
+                            println!("{} not in RSTB???", &param_name);
+                            continue;
+                        }
                     }
-                },
+                }
                 Err(_) => println!("File error...?"),
             }
         }
@@ -975,12 +1262,15 @@ mod tests {
     #[test]
     fn test_all_bphysics() {
         use std::collections::HashSet;
-        use roead::{sarc, aamp::ParameterIO};
-        use crate::ResourceSizeTable;
+
         use glob::glob;
+        use roead::{aamp::ParameterIO, sarc};
+
+        use crate::ResourceSizeTable;
         let mut result: HashSet<String> = HashSet::new();
 
-        let root = "E:/Users/chodn/Documents/ISOs - WiiU/The Legend of Zelda Breath of the Wild (UPDATE DATA) (v208) (USA)/content";
+        let root = "E:/Users/chodn/Documents/ISOs - WiiU/The Legend of Zelda Breath of the Wild \
+                    (UPDATE DATA) (v208) (USA)/content";
         let rstb_path = root.to_owned() + "/System/Resource/ResourceSizeTable.product.srsizetable";
         let rstable = ResourceSizeTable::from_binary(std::fs::read(rstb_path).unwrap()).unwrap();
         for entry in glob(&(root.to_owned() + "/Actor/Pack/*.sbactorpack")).unwrap() {
@@ -988,20 +1278,41 @@ mod tests {
                 Ok(path) => {
                     let actorname = path.file_stem().unwrap().to_str().unwrap();
                     let sarc = sarc::Sarc::new(std::fs::read(&path).unwrap()).unwrap();
-                    let bxml = ParameterIO::from_binary(sarc.get_data(&format!("Actor/ActorLink/{}.bxml", actorname)).unwrap().unwrap()).unwrap();
-                    let user = bxml.param_root.objects.get("LinkTarget").unwrap().get("PhysicsUser").unwrap().as_str().unwrap();
+                    let bxml = ParameterIO::from_binary(
+                        sarc.get_data(&format!("Actor/ActorLink/{}.bxml", actorname))
+                            .unwrap()
+                            .unwrap(),
+                    )
+                    .unwrap();
+                    let user = bxml
+                        .param_root
+                        .objects
+                        .get("LinkTarget")
+                        .unwrap()
+                        .get("PhysicsUser")
+                        .unwrap()
+                        .as_str()
+                        .unwrap();
                     let param_name = format!("Actor/Physics/{}.bphysics", user);
                     if param_name.contains("Dummy") | result.contains(&param_name) {
                         continue;
                     }
                     if let Some(o_file) = sarc.get_data(&param_name).unwrap() {
                         if let Some(rstb_entry) = rstable.get(param_name.as_str()) {
-                            let calc_size = super::estimate_from_bytes_and_name(o_file, &param_name, Endian::Big).unwrap();
+                            let calc_size = super::estimate_from_bytes_and_name(
+                                o_file,
+                                &param_name,
+                                Endian::Big,
+                            )
+                            .unwrap();
                             assert_ge!(calc_size, rstb_entry);
                             result.insert(param_name);
-                        } else { println!("{} not in RSTB???", &param_name); continue; }
+                        } else {
+                            println!("{} not in RSTB???", &param_name);
+                            continue;
+                        }
                     }
-                },
+                }
                 Err(_) => println!("File error...?"),
             }
         }
@@ -1010,12 +1321,15 @@ mod tests {
     #[test]
     fn test_all_brecipe() {
         use std::collections::HashSet;
-        use roead::{sarc, aamp::ParameterIO};
-        use crate::ResourceSizeTable;
+
         use glob::glob;
+        use roead::{aamp::ParameterIO, sarc};
+
+        use crate::ResourceSizeTable;
         let mut result: HashSet<String> = HashSet::new();
 
-        let root = "E:/Users/chodn/Documents/ISOs - WiiU/The Legend of Zelda Breath of the Wild (UPDATE DATA) (v208) (USA)/content";
+        let root = "E:/Users/chodn/Documents/ISOs - WiiU/The Legend of Zelda Breath of the Wild \
+                    (UPDATE DATA) (v208) (USA)/content";
         let rstb_path = root.to_owned() + "/System/Resource/ResourceSizeTable.product.srsizetable";
         let rstable = ResourceSizeTable::from_binary(std::fs::read(rstb_path).unwrap()).unwrap();
         for entry in glob(&(root.to_owned() + "/Actor/Pack/*.sbactorpack")).unwrap() {
@@ -1023,20 +1337,41 @@ mod tests {
                 Ok(path) => {
                     let actorname = path.file_stem().unwrap().to_str().unwrap();
                     let sarc = sarc::Sarc::new(std::fs::read(&path).unwrap()).unwrap();
-                    let bxml = ParameterIO::from_binary(sarc.get_data(&format!("Actor/ActorLink/{}.bxml", actorname)).unwrap().unwrap()).unwrap();
-                    let user = bxml.param_root.objects.get("LinkTarget").unwrap().get("RecipeUser").unwrap().as_str().unwrap();
+                    let bxml = ParameterIO::from_binary(
+                        sarc.get_data(&format!("Actor/ActorLink/{}.bxml", actorname))
+                            .unwrap()
+                            .unwrap(),
+                    )
+                    .unwrap();
+                    let user = bxml
+                        .param_root
+                        .objects
+                        .get("LinkTarget")
+                        .unwrap()
+                        .get("RecipeUser")
+                        .unwrap()
+                        .as_str()
+                        .unwrap();
                     let param_name = format!("Actor/Recipe/{}.brecipe", user);
                     if param_name.contains("Dummy") | result.contains(&param_name) {
                         continue;
                     }
                     if let Some(o_file) = sarc.get_data(&param_name).unwrap() {
                         if let Some(rstb_entry) = rstable.get(param_name.as_str()) {
-                            let calc_size = super::estimate_from_bytes_and_name(o_file, &param_name, Endian::Big).unwrap();
+                            let calc_size = super::estimate_from_bytes_and_name(
+                                o_file,
+                                &param_name,
+                                Endian::Big,
+                            )
+                            .unwrap();
                             assert_ge!(calc_size, rstb_entry);
                             result.insert(param_name);
-                        } else { println!("{} not in RSTB???", &param_name); continue; }
+                        } else {
+                            println!("{} not in RSTB???", &param_name);
+                            continue;
+                        }
                     }
-                },
+                }
                 Err(_) => println!("File error...?"),
             }
         }
@@ -1045,12 +1380,15 @@ mod tests {
     #[test]
     fn test_all_bshop() {
         use std::collections::HashSet;
-        use roead::{sarc, aamp::ParameterIO};
-        use crate::ResourceSizeTable;
+
         use glob::glob;
+        use roead::{aamp::ParameterIO, sarc};
+
+        use crate::ResourceSizeTable;
         let mut result: HashSet<String> = HashSet::new();
 
-        let root = "E:/Users/chodn/Documents/ISOs - WiiU/The Legend of Zelda Breath of the Wild (UPDATE DATA) (v208) (USA)/content";
+        let root = "E:/Users/chodn/Documents/ISOs - WiiU/The Legend of Zelda Breath of the Wild \
+                    (UPDATE DATA) (v208) (USA)/content";
         let rstb_path = root.to_owned() + "/System/Resource/ResourceSizeTable.product.srsizetable";
         let rstable = ResourceSizeTable::from_binary(std::fs::read(rstb_path).unwrap()).unwrap();
         for entry in glob(&(root.to_owned() + "/Actor/Pack/*.sbactorpack")).unwrap() {
@@ -1058,20 +1396,41 @@ mod tests {
                 Ok(path) => {
                     let actorname = path.file_stem().unwrap().to_str().unwrap();
                     let sarc = sarc::Sarc::new(std::fs::read(&path).unwrap()).unwrap();
-                    let bxml = ParameterIO::from_binary(sarc.get_data(&format!("Actor/ActorLink/{}.bxml", actorname)).unwrap().unwrap()).unwrap();
-                    let user = bxml.param_root.objects.get("LinkTarget").unwrap().get("ShopDataUser").unwrap().as_str().unwrap();
+                    let bxml = ParameterIO::from_binary(
+                        sarc.get_data(&format!("Actor/ActorLink/{}.bxml", actorname))
+                            .unwrap()
+                            .unwrap(),
+                    )
+                    .unwrap();
+                    let user = bxml
+                        .param_root
+                        .objects
+                        .get("LinkTarget")
+                        .unwrap()
+                        .get("ShopDataUser")
+                        .unwrap()
+                        .as_str()
+                        .unwrap();
                     let param_name = format!("Actor/ShopData/{}.bshop", user);
                     if param_name.contains("Dummy") | result.contains(&param_name) {
                         continue;
                     }
                     if let Some(o_file) = sarc.get_data(&param_name).unwrap() {
                         if let Some(rstb_entry) = rstable.get(param_name.as_str()) {
-                            let calc_size = super::estimate_from_bytes_and_name(o_file, &param_name, Endian::Big).unwrap();
+                            let calc_size = super::estimate_from_bytes_and_name(
+                                o_file,
+                                &param_name,
+                                Endian::Big,
+                            )
+                            .unwrap();
                             assert_ge!(calc_size, rstb_entry);
                             result.insert(param_name);
-                        } else { println!("{} not in RSTB???", &param_name); continue; }
+                        } else {
+                            println!("{} not in RSTB???", &param_name);
+                            continue;
+                        }
                     }
-                },
+                }
                 Err(_) => println!("File error...?"),
             }
         }
@@ -1080,12 +1439,15 @@ mod tests {
     #[test]
     fn test_all_bxml() {
         use std::collections::HashSet;
-        use roead::sarc;
-        use crate::ResourceSizeTable;
+
         use glob::glob;
+        use roead::sarc;
+
+        use crate::ResourceSizeTable;
         let mut result: HashSet<String> = HashSet::new();
 
-        let root = "E:/Users/chodn/Documents/ISOs - WiiU/The Legend of Zelda Breath of the Wild (UPDATE DATA) (v208) (USA)/content";
+        let root = "E:/Users/chodn/Documents/ISOs - WiiU/The Legend of Zelda Breath of the Wild \
+                    (UPDATE DATA) (v208) (USA)/content";
         let rstb_path = root.to_owned() + "/System/Resource/ResourceSizeTable.product.srsizetable";
         let rstable = ResourceSizeTable::from_binary(std::fs::read(rstb_path).unwrap()).unwrap();
         for entry in glob(&(root.to_owned() + "/Actor/Pack/*.sbactorpack")).unwrap() {
@@ -1099,11 +1461,19 @@ mod tests {
                     }
                     let bxml_bytes = sarc.get_data(&param_name).unwrap().unwrap();
                     if let Some(rstb_entry) = rstable.get(param_name.as_str()) {
-                        let calc_size = super::estimate_from_bytes_and_name(bxml_bytes, &param_name, Endian::Big).unwrap();
+                        let calc_size = super::estimate_from_bytes_and_name(
+                            bxml_bytes,
+                            &param_name,
+                            Endian::Big,
+                        )
+                        .unwrap();
                         assert_ge!(calc_size, rstb_entry);
                         result.insert(param_name);
-                    } else { println!("{} not in RSTB???", &param_name); continue; }
-                },
+                    } else {
+                        println!("{} not in RSTB???", &param_name);
+                        continue;
+                    }
+                }
                 Err(_) => println!("File error...?"),
             }
         }
@@ -1112,9 +1482,11 @@ mod tests {
     #[test]
     fn test_all_bxml_nx() {
         use std::collections::HashSet;
-        use roead::sarc;
-        use crate::ResourceSizeTable;
+
         use glob::glob;
+        use roead::sarc;
+
+        use crate::ResourceSizeTable;
         let mut result: HashSet<String> = HashSet::new();
 
         let root = "E:/Users/chodn/Documents/ISOs - Switch/LoZBOTW/content";
@@ -1131,11 +1503,19 @@ mod tests {
                     }
                     let bxml_bytes = sarc.get_data(&param_name).unwrap().unwrap();
                     if let Some(rstb_entry) = rstable.get(param_name.as_str()) {
-                        let calc_size = super::estimate_from_bytes_and_name(bxml_bytes, &param_name, Endian::Little).unwrap();
+                        let calc_size = super::estimate_from_bytes_and_name(
+                            bxml_bytes,
+                            &param_name,
+                            Endian::Little,
+                        )
+                        .unwrap();
                         assert_ge!(calc_size, rstb_entry);
                         result.insert(param_name);
-                    } else { println!("{} not in RSTB???", &param_name); continue; }
-                },
+                    } else {
+                        println!("{} not in RSTB???", &param_name);
+                        continue;
+                    }
+                }
                 Err(_) => println!("File error...?"),
             }
         }
@@ -1143,17 +1523,25 @@ mod tests {
     #[cfg(feature = "complex_testing")]
     #[test]
     fn write_graphic_pack_rstb_from_formulas_only() {
-        use std::{fs, collections::HashSet, path::Path};
-        use roead::{sarc, yaz0};
-        use crate::ResourceSizeTable;
+        use std::{collections::HashSet, fs, path::Path};
+
         use glob::glob;
+        use roead::{sarc, yaz0};
+
+        use crate::ResourceSizeTable;
         let mut parsed: HashSet<String> = HashSet::new();
 
         let root = "D:/Program Files/cemu_1.16.1/graphicPacks/BreathOfTheWild_BCML/content";
-        let rstb_str = &format!("{}/System/Resource/ResourceSizeTable.product.srsizetable", root);
+        let rstb_str = &format!(
+            "{}/System/Resource/ResourceSizeTable.product.srsizetable",
+            root
+        );
         let rstb_path = Path::new(rstb_str);
-        
-        let rstb_bak_str = &format!("{}/System/Resource/ResourceSizeTable.product.srsizetable.bak", root);
+
+        let rstb_bak_str = &format!(
+            "{}/System/Resource/ResourceSizeTable.product.srsizetable.bak",
+            root
+        );
         let rstb_backup = Path::new(rstb_bak_str);
         if !rstb_backup.exists() {
             println!("RSTB not backed up. Backing up...");
@@ -1161,22 +1549,38 @@ mod tests {
         }
         let mut rstable = ResourceSizeTable::from_binary(fs::read(rstb_backup).unwrap()).unwrap();
 
-        let titlebg = sarc::Sarc::new(fs::read(&format!("{}/Pack/TitleBG.pack", root)).unwrap()).unwrap();
+        let titlebg =
+            sarc::Sarc::new(fs::read(&format!("{}/Pack/TitleBG.pack", root)).unwrap()).unwrap();
         for bg_file in titlebg.files() {
             if let Some(name) = bg_file.name {
                 if parsed.contains(name) {
                     continue;
                 }
-                let entry = name.replace(".s",".");
+                let entry = name.replace(".s", ".");
                 if let Some(ext) = Path::new(&entry).extension() {
                     if ext == "bfres" && name.contains("Tex") {
                         if rstable.contains(entry.as_str()) {
-                            rstable.set(entry.as_str(), super::estimate_from_bytes_and_name(bg_file.data, &entry, Endian::Big).unwrap());
+                            rstable.set(
+                                entry.as_str(),
+                                super::estimate_from_bytes_and_name(
+                                    bg_file.data,
+                                    &entry,
+                                    Endian::Big,
+                                )
+                                .unwrap(),
+                            );
                         }
-                    }
-                    else if ext == "bactorpack" {
+                    } else if ext == "bactorpack" {
                         if rstable.contains(entry.as_str()) {
-                            rstable.set(entry.as_str(), super::estimate_from_bytes_and_name(bg_file.data, &entry, Endian::Big).unwrap());
+                            rstable.set(
+                                entry.as_str(),
+                                super::estimate_from_bytes_and_name(
+                                    bg_file.data,
+                                    &entry,
+                                    Endian::Big,
+                                )
+                                .unwrap(),
+                            );
                         }
                         let pack = sarc::Sarc::new(bg_file.data).unwrap();
                         for s_file in pack.files() {
@@ -1185,19 +1589,27 @@ mod tests {
                                 continue;
                             }
                             match Path::new(s_name).extension().unwrap().to_str().unwrap() {
-                                "baiprog" |
-                                "baslist" |
-                                "bdrop" |
-                                "bgparamlist" |
-                                "bmodellist" |
-                                "bphysics" |
-                                "brecipe" |
-                                "bshop" |
-                                "bxml" |
-                                "nonexistent_so_i_can_comment_out_bxml" => {
-                                    rstable.set(s_name, super::estimate_from_bytes_and_name(s_file.data, s_name, Endian::Big).unwrap());
-                                },
-                                _ => {},
+                                "baiprog"
+                                | "baslist"
+                                | "bdrop"
+                                | "bgparamlist"
+                                | "bmodellist"
+                                | "bphysics"
+                                | "brecipe"
+                                | "bshop"
+                                | "bxml"
+                                | "nonexistent_so_i_can_comment_out_bxml" => {
+                                    rstable.set(
+                                        s_name,
+                                        super::estimate_from_bytes_and_name(
+                                            s_file.data,
+                                            s_name,
+                                            Endian::Big,
+                                        )
+                                        .unwrap(),
+                                    );
+                                }
+                                _ => {}
                             }
                             parsed.insert(s_name.to_owned());
                         }
@@ -1210,15 +1622,23 @@ mod tests {
         for entry in glob(&(root.to_owned() + "/Model/*.Tex*.sbfres")).unwrap() {
             match entry {
                 Ok(path) => {
-                    let param_name = format!("Model/{}.bfres", path.file_stem().unwrap().to_str().unwrap());
+                    let param_name = format!(
+                        "Model/{}.bfres",
+                        path.file_stem().unwrap().to_str().unwrap()
+                    );
                     if parsed.contains(&param_name) {
                         continue;
                     }
                     if rstable.contains(param_name.as_str()) {
-                        rstable.set(param_name.as_str(), super::estimate_from_file(path, Endian::Big).unwrap().unwrap());
+                        rstable.set(
+                            param_name.as_str(),
+                            super::estimate_from_file(path, Endian::Big)
+                                .unwrap()
+                                .unwrap(),
+                        );
                     }
                     parsed.insert(param_name);
-                },
+                }
                 Err(_) => println!("BFRES file error...?"),
             }
         }
@@ -1226,10 +1646,17 @@ mod tests {
         for entry in glob(&(root.to_owned() + "/Actor/Pack/*.sbactorpack")).unwrap() {
             match entry {
                 Ok(path) => {
-                    let param_name = format!("Actor/Pack/{}.bactorpack", path.file_stem().unwrap().to_str().unwrap());
+                    let param_name = format!(
+                        "Actor/Pack/{}.bactorpack",
+                        path.file_stem().unwrap().to_str().unwrap()
+                    );
                     let data = fs::read(&path).unwrap();
                     if rstable.contains(param_name.as_str()) && !parsed.contains(&param_name) {
-                        rstable.set(param_name.as_str(), super::estimate_from_bytes_and_name(&data, &param_name, Endian::Big).unwrap());
+                        rstable.set(
+                            param_name.as_str(),
+                            super::estimate_from_bytes_and_name(&data, &param_name, Endian::Big)
+                                .unwrap(),
+                        );
                         parsed.insert(param_name);
                     }
                     let pack = sarc::Sarc::new(data).unwrap();
@@ -1239,29 +1666,39 @@ mod tests {
                             continue;
                         }
                         match Path::new(s_name).extension().unwrap().to_str().unwrap() {
-                            "baiprog" |
-                            "baslist" |
-                            "bdrop" |
-                            "bgparamlist" |
-                            "bmodellist" |
-                            "bphysics" |
-                            "brecipe" |
-                            "bshop" |
-                            "bxml" |
-                            "nonexistent_so_i_can_comment_out_bxml" => {
-                                rstable.set(s_name, super::estimate_from_bytes_and_name(s_file.data, s_name, Endian::Big).unwrap());
-                            },
-                            _ => {},
+                            "baiprog"
+                            | "baslist"
+                            | "bdrop"
+                            | "bgparamlist"
+                            | "bmodellist"
+                            | "bphysics"
+                            | "brecipe"
+                            | "bshop"
+                            | "bxml"
+                            | "nonexistent_so_i_can_comment_out_bxml" => {
+                                rstable.set(
+                                    s_name,
+                                    super::estimate_from_bytes_and_name(
+                                        s_file.data,
+                                        s_name,
+                                        Endian::Big,
+                                    )
+                                    .unwrap(),
+                                );
+                            }
+                            _ => {}
                         }
                         parsed.insert(s_name.to_owned());
                     }
-                },
+                }
                 Err(_) => println!("File error...?"),
             }
         }
 
         let mut buffer = Vec::<u8>::new();
-        rstable.write(&mut buffer, Endian::Big).expect("Couldn't write RSTB");
+        rstable
+            .write(&mut buffer, Endian::Big)
+            .expect("Couldn't write RSTB");
         std::fs::write(rstb_path, yaz0::compress(buffer)).expect("Couldn't write RSTB to disc");
     }
 }

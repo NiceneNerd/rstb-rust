@@ -1,10 +1,10 @@
-use roead::aamp::ParameterIO;
-use crate::Endian;
-
 use std::mem::size_of;
-use phf::{Map, phf_map};
+
+use phf::{phf_map, Map};
+use roead::aamp::ParameterIO;
 
 use super::cpp_classes::GParamList::*;
+use crate::Endian;
 
 const CLASS_SIZE_WIIU: u32 = 0x248;
 const CLASS_SIZE_NX: u32 = 0x2c0;

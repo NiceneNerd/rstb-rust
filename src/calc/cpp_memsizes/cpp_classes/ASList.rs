@@ -1,7 +1,4 @@
-use super::SafeString;
-use super::SeadBuffer;
-use super::agl::*;
-use super::{Bool32, Float};
+use super::{agl::*, Bool32, Float, SafeString, SeadBuffer};
 
 #[repr(C)]
 pub struct ASDefine<T> {
@@ -16,7 +13,7 @@ pub struct CFPost<T> {
     name: Parameter<T, SafeString<T>>,
     frame: Parameter<T, Float>,
     start_frame_rate: Parameter<T, Float>,
-    obj: ParameterObj<T>
+    obj: ParameterObj<T>,
 }
 
 #[repr(C)]

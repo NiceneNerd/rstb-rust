@@ -1,5 +1,6 @@
-use crate::*;
 use std::{borrow::Borrow, collections::BTreeMap, io::Write};
+
+use crate::*;
 
 impl ResourceSizeTable {
     /// Reads an RSTB from a byte slice. Will automatically decompress yaz0
@@ -98,10 +99,9 @@ impl ResourceSizeTable {
         {
             let mut writer = std::io::BufWriter::new(&mut buf);
             yaz0::Yaz0Writer::new(&mut writer)
-                .compress_and_write(
-                    &self.to_binary(endian),
-                    yaz0::CompressionLevel::Naive { quality: 7 },
-                )
+                .compress_and_write(&self.to_binary(endian), yaz0::CompressionLevel::Naive {
+                    quality: 7,
+                })
                 .unwrap();
         }
         buf
