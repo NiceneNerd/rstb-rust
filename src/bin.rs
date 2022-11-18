@@ -83,7 +83,8 @@ impl ResourceSizeTable {
     pub fn to_binary(&self, endian: Endian) -> Vec<u8> {
         let mut buf: Vec<u8> =
             Vec::with_capacity(12 + (self.crc_map.len() * 8) + (self.name_map.len() * 132));
-        self.write(&mut buf, endian).unwrap();
+        self.write(&mut buf, endian)
+            .expect("Should write to in-memory buffer without error");
         buf
     }
 

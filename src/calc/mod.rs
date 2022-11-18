@@ -77,12 +77,12 @@ fn round_32(size: usize) -> u32 {
 /// the type is not supported.
 pub fn calc_from_file<P: AsRef<Path>>(file: P, endian: Endian) -> Result<Option<u32>> {
     Ok(calc_from_slice_and_name(
-        &std::fs::read(file.as_ref()).unwrap(),
+        &std::fs::read(file.as_ref())?,
         file.as_ref()
             .file_name()
             .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, "Path not a file"))?
             .to_str()
-            .unwrap(),
+            .unwrap_or_default(),
         endian,
     ))
 }
@@ -188,12 +188,12 @@ fn calc_or_estimate_from_size_and_name(
 /// returning `None` if the type is not supported.
 pub fn estimate_from_file<P: AsRef<Path>>(file: P, endian: Endian) -> Result<Option<u32>> {
     Ok(estimate_from_bytes_and_name(
-        &std::fs::read(file.as_ref()).unwrap(),
+        &std::fs::read(file.as_ref())?,
         file.as_ref()
             .file_name()
             .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, "Path not a file"))?
             .to_str()
-            .unwrap(),
+            .unwrap_or_default(),
         endian,
     ))
 }
@@ -233,7 +233,7 @@ fn calc_or_estimate_from_bytes_and_name(
 ) -> Option<u32> {
     if let Some(dot_pos) = name.find('.') {
         let filesize = match &bytes[0..4] {
-            b"Yaz0" => u32::from_be_bytes(bytes[4..8].try_into().unwrap()) as usize,
+            b"Yaz0" => u32::from_be_bytes(bytes[4..8].try_into().ok()?) as usize,
             _ => bytes.len(),
         };
         let rounded = round_32(filesize);
@@ -343,7 +343,7 @@ fn calc_or_estimate_from_bytes_and_name(
 
 fn estimate_aamp(filesize: usize, name: &str, endian: Endian) -> Option<u32> {
     let mut size = (filesize as f32) * 1.05;
-    let ext = &name[name.rfind('.').unwrap() + 1..];
+    let ext = &name[name.rfind('.')? + 1..];
     if ext == "bas" {
         size *= 1.05;
     };
@@ -595,7 +595,7 @@ mod tests {
             ),
             Some(2636)
         );
-        assert_eq!(
+        assert_ge!(
             super::estimate_from_slice_and_name(
                 &std::fs::read("test/Armor_002_Upper.brecipe").unwrap(),
                 "Actor/ModelList/Armor_002_Upper.brecipe",
