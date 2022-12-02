@@ -1,5 +1,6 @@
-use crate::*;
 use std::{borrow::Borrow, collections::BTreeMap, io::Write};
+
+use crate::*;
 
 impl ResourceSizeTable {
     /// Reads an RSTB from a byte slice. Will automatically decompress yaz0
@@ -21,12 +22,12 @@ impl ResourceSizeTable {
         let mut endian = Endian::Big;
         let has_magic = &bytes[0..4] == b"RSTB";
         let crc_table_size = if has_magic {
-            let size = read_u32(&bytes[4..8], endian)?;
-            if size > 2000000000 {
+            let size = read_u32(&bytes[8..12], endian)?;
+            if size > 0x10000 {
                 endian = Endian::Little;
                 read_u32(&bytes[4..8], endian)?
             } else {
-                size
+                read_u32(&bytes[4..8], endian)?
             }
         } else {
             (bytes.len() / 8) as u32
@@ -82,7 +83,8 @@ impl ResourceSizeTable {
     pub fn to_binary(&self, endian: Endian) -> Vec<u8> {
         let mut buf: Vec<u8> =
             Vec::with_capacity(12 + (self.crc_map.len() * 8) + (self.name_map.len() * 132));
-        self.write(&mut buf, endian).unwrap();
+        self.write(&mut buf, endian)
+            .expect("Should write to in-memory buffer without error");
         buf
     }
 
@@ -98,10 +100,9 @@ impl ResourceSizeTable {
         {
             let mut writer = std::io::BufWriter::new(&mut buf);
             yaz0::Yaz0Writer::new(&mut writer)
-                .compress_and_write(
-                    &self.to_binary(endian),
-                    yaz0::CompressionLevel::Naive { quality: 7 },
-                )
+                .compress_and_write(&self.to_binary(endian), yaz0::CompressionLevel::Naive {
+                    quality: 7,
+                })
                 .unwrap();
         }
         buf

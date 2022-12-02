@@ -1,9 +1,10 @@
-#[cfg(feature = "json")]
-use serde::{Deserialize, Serialize};
 use std::{
     borrow::Borrow,
     fmt::{Debug, Display},
 };
+
+#[cfg(feature = "json")]
+use serde::{Deserialize, Serialize};
 
 /// A silly string class representing the key of an entry in an RSTB name map.
 /// Used for parsing convenience. Can be easily converted to `&str` or `String`.
