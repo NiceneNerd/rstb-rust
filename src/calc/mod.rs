@@ -347,7 +347,14 @@ fn estimate_aamp(filesize: usize, name: &str, endian: Endian) -> Option<u32> {
     if ext == "bas" {
         size *= 1.05;
     };
-    if ext == "bdmgparam" {
+    if ext == "bassetting" {
+        size = (round_32(size as usize)
+            + match endian {
+                Endian::Big => 0xe4 + 0x1d8,
+                Endian::Little => 0x168 + 0x260,
+            }) as f32
+            + (size * 2.75)
+    } else if ext == "bdmgparam" {
         size = (((-0.0018 * size) + 6.6273) * size) + 500.0
     } else if ext == "bphysics" {
         size = (round_32(size as usize) + 0x4E + 0x324) as f32
@@ -549,6 +556,14 @@ mod tests {
                 Endian::Big,
             ),
             Some(9444)
+        );
+        assert_ge!(
+            super::estimate_from_size_and_name(27960, "Actor/ASSetting.bassetting", Endian::Big),
+            Some(101452)
+        );
+        assert_ge!(
+            super::estimate_from_size_and_name(27960, "Actor/ASSetting.bassetting", Endian::Little),
+            Some(165864)
         );
     }
 
