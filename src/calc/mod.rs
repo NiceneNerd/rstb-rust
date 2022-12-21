@@ -618,7 +618,7 @@ mod tests {
             ),
             Some(1276)
         );
-        assert_eq!(
+        assert_ge!(
             super::estimate_from_slice_and_name(
                 &std::fs::read("test/Assassin_Senior.bdrop").unwrap(),
                 "Actor/DropTable/Assassin_Senior.bdrop",
