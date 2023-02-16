@@ -149,7 +149,7 @@ fn parse_defparams(obj: &ParameterObject, size: &mut u32, endian: Endian) {
                     Endian::Big => size_of::<Parameter<u32, U32>>() as u32,
                     Endian::Little => size_of::<Parameter<u64, U32>>() as u32,
                 };
-            } else if let Ok(_) = p.as_int() {
+            } else if let Ok(_) = p.as_i32() {
                 *size += match endian {
                     Endian::Big => size_of::<Parameter<u32, S32>>() as u32,
                     Endian::Little => size_of::<Parameter<u64, S32>>() as u32,

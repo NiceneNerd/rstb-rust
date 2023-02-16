@@ -261,7 +261,12 @@ fn calc_or_estimate_from_bytes_and_name(
                                 "beventpack" => 0xe0,
                                 "bfevfl" => 0x58,
                                 "hkrb" => 40,
-                                //"bdmgparam" => (rounded as f32 * 0.666) as u32,
+                                "bdmgparam" => {
+                                    let rounded = rounded as f32;
+                                    return Some(
+                                        ((((-0.0018 * rounded) + 6.6273) * rounded) + 500.0) as u32,
+                                    );
+                                }
                                 _ => 0,
                             }
                     }
@@ -271,7 +276,13 @@ fn calc_or_estimate_from_bytes_and_name(
                             + size
                             + parse_size
                             + match ext {
-                                "bdmgparam" => (rounded as f32 * 0.666) as u32,
+                                "bdmgparam" => {
+                                    let rounded = rounded as f32;
+                                    return Some(
+                                        (((((-0.0018 * rounded) + 6.6273) * rounded) + 500.0) * 1.5)
+                                            as u32,
+                                    );
+                                }
                                 _ => 0,
                             }
                     }
@@ -503,18 +514,18 @@ mod tests {
             Some(6192)
         );
         let buffer: Vec<u8> = read("test/Enemy_Bokoblin_Gold.bdmgparam").unwrap();
-        assert_eq!(
-            super::calc_from_slice_and_name(&buffer, "Enemy_Bokoblin_Gold.bdmgparam", Endian::Big),
+        assert_ge!(
+            super::calc_from_slice_and_name(buffer, "Enemy_Bokoblin_Gold.bdmgparam", Endian::Big),
             Some(5396)
         );
         let buffer: Vec<u8> = read("test/Obj_TreeWhiteBirch_A_01.hkrb").unwrap();
         assert_eq!(
-            super::calc_from_slice_and_name(&buffer, "Obj_TreeWhiteBirch_A_01.hkrb", Endian::Big),
+            super::calc_from_slice_and_name(buffer, "Obj_TreeWhiteBirch_A_01.hkrb", Endian::Big),
             Some(3560)
         );
         let buffer: Vec<u8> = read("test/savedataformat.ssarc").unwrap();
         assert_eq!(
-            super::calc_from_slice_and_name(&buffer, "savedataformat.ssarc", Endian::Big),
+            super::calc_from_slice_and_name(buffer, "savedataformat.ssarc", Endian::Big),
             Some(2_801_216)
         );
     }

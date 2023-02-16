@@ -90,7 +90,7 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
             let num_rigid_body_sets = paramsetheader
                 .get("use_rigid_body_set_num")
                 .unwrap()
-                .as_int()
+                .as_i32()
                 .unwrap() as u32;
             if num_rigid_body_sets > 0 {
                 total_size += num_rigid_body_sets * rigidbodysetparam_size;
@@ -103,7 +103,7 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
                                 rigidbodyset.objects.get("RigidBodySetHeader")
                             {
                                 let num_rigid_bodies =
-                                    rigidbodysetheader.get("num").unwrap().as_int().unwrap() as u32;
+                                    rigidbodysetheader.get("num").unwrap().as_i32().unwrap() as u32;
                                 total_size += num_rigid_bodies * rigidbodyparam_size;
                                 for j in 0..num_rigid_bodies {
                                     if let Some(rigidbody) =
@@ -114,7 +114,7 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
                                         {
                                             if let Some(shape_num) = rigidbodyparam.get("shape_num")
                                             {
-                                                let num_shapes = shape_num.as_int().unwrap() as u32;
+                                                let num_shapes = shape_num.as_i32().unwrap() as u32;
                                                 total_size += num_shapes * shapeparamobj_size;
                                                 for k in 0..num_shapes {
                                                     if let Some(shapeparam) = rigidbody
@@ -125,7 +125,7 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
                                                             shapeparam.get("vertex_num")
                                                         {
                                                             let num_vertices =
-                                                                vertex_num.as_int().unwrap() as u32;
+                                                                vertex_num.as_i32().unwrap() as u32;
                                                             total_size +=
                                                                 num_vertices * vertex_size;
                                                         }
@@ -154,7 +154,7 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
                         let num_forms = charactercontrollerparam
                             .get("form_num")
                             .unwrap()
-                            .as_int()
+                            .as_i32()
                             .unwrap() as u32;
                         total_size += num_forms * form_size;
                         for i in 0..num_forms {
@@ -162,7 +162,7 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
                             {
                                 if let Some(formheader) = form.objects.get("FormHeader") {
                                     let num_shapes =
-                                        formheader.get("shape_num").unwrap().as_int().unwrap()
+                                        formheader.get("shape_num").unwrap().as_i32().unwrap()
                                             as u32;
                                     total_size += num_shapes * shapeparamobj_size;
                                     for j in 0..num_shapes {
@@ -171,7 +171,7 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
                                         {
                                             if let Some(vertex_num) = shapeparam.get("vertex_num") {
                                                 let num_vertices =
-                                                    vertex_num.as_int().unwrap() as u32;
+                                                    vertex_num.as_i32().unwrap() as u32;
                                                 total_size += num_vertices * vertex_size;
                                             }
                                         }
@@ -196,13 +196,13 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
                         let num_contact_point_info = rigidcontactinfoheader
                             .get("contact_point_info_num")
                             .unwrap()
-                            .as_int()
+                            .as_i32()
                             .unwrap() as u32;
                         total_size += num_contact_point_info * contactpointinfoparam_size;
                         let num_collision_info = rigidcontactinfoheader
                             .get("collision_info_num")
                             .unwrap()
-                            .as_int()
+                            .as_i32()
                             .unwrap() as u32;
                         total_size += num_collision_info * collisioninfoparam_size;
                     }
@@ -229,7 +229,7 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
                 if let Some(clothlist) = paramset.lists.get("Cloth") {
                     if let Some(clothheader) = clothlist.objects.get("ClothHeader") {
                         let num_cloth =
-                            clothheader.get("cloth_num").unwrap().as_int().unwrap() as u32;
+                            clothheader.get("cloth_num").unwrap().as_i32().unwrap() as u32;
                         total_size += num_cloth * clothparam_size;
                     }
                 }
@@ -237,7 +237,7 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
             let num_edge_rigid_bodies = paramsetheader
                 .get("use_edge_rigid_body_num")
                 .unwrap()
-                .as_int()
+                .as_i32()
                 .unwrap() as u32;
             if num_edge_rigid_bodies > 0 {
                 total_size += edgerigidbodysetparam_size;

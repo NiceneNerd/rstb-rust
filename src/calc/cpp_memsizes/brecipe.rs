@@ -31,13 +31,13 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
 
     if let Some(header) = a.param_root.objects.get("Header") {
         if let Some(num_tables_param) = header.get("TableNum") {
-            let num_tables = num_tables_param.as_int().unwrap() as u32;
+            let num_tables = num_tables_param.as_i32().unwrap() as u32;
             total_size += num_tables * table_size;
             for i in 0..num_tables {
                 let table_id = format!("Table{:02}", i + 1);
                 let table_name = header.get(table_id).unwrap().as_string64().unwrap();
                 if let Some(table) = a.param_root.objects.get(table_name.as_str()) {
-                    let num_items = table.get("ColumnNum").unwrap().as_int().unwrap() as u32;
+                    let num_items = table.get("ColumnNum").unwrap().as_i32().unwrap() as u32;
                     total_size += num_items * item_size;
                 }
             }
