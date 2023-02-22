@@ -77,7 +77,7 @@ fn round_32(size: usize) -> u32 {
 /// the type is not supported.
 pub fn calc_from_file<P: AsRef<Path>>(file: P, endian: Endian) -> Result<Option<u32>> {
     Ok(calc_from_slice_and_name(
-        &std::fs::read(file.as_ref())?,
+        std::fs::read(file.as_ref())?,
         file.as_ref()
             .file_name()
             .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, "Path not a file"))?

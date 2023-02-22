@@ -34,7 +34,6 @@ impl ResourceSizeTable {
         };
         let crc_start = if has_magic { 12 } else { 0 };
         let crc_map: BTreeMap<u32, u32> = (0..crc_table_size)
-            .into_iter()
             .map(|i| -> Result<(u32, u32)> {
                 let offset = (crc_start + i * 8) as usize;
                 Ok((
@@ -47,7 +46,6 @@ impl ResourceSizeTable {
             let name_map_size = read_u32(&bytes[8..12], endian)?;
             let name_map_start = 12 + crc_table_size * 8;
             (0..name_map_size)
-                .into_iter()
                 .map(|i| -> Result<(FixedString, u32)> {
                     let offset = (name_map_start + i * 132) as usize;
                     Ok((

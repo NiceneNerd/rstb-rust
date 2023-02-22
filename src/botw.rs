@@ -1,12 +1,12 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::LazyLock};
 
-use lazy_static::lazy_static;
+use include_flate::flate;
 use serde_json::Value;
 
 use crate::{Endian, ResourceSizeTable, CRC32};
 
-const SWITCH_RSTB_JSON: &str = include_str!("../data/switch.json");
-const WIIU_RSTB_JSON: &str = include_str!("../data/wiiu.json");
+flate!(static SWITCH_RSTB_JSON: str from "data/switch.json");
+flate!(static WIIU_RSTB_JSON: str from "data/wiiu.json");
 
 impl ResourceSizeTable {
     /// *Requires the `botw-data` feature.*
@@ -22,23 +22,22 @@ impl ResourceSizeTable {
     }
 }
 
-lazy_static! {
-    pub(crate) static ref SWITCH_RSTB: ResourceSizeTable =
-        serde_json::from_str(SWITCH_RSTB_JSON).unwrap();
-    pub(crate) static ref WIIU_RSTB: ResourceSizeTable =
-        serde_json::from_str(WIIU_RSTB_JSON).unwrap();
-    pub(crate) static ref FILE_HASHES: HashMap<u32, String> = {
-        let nx: Value = serde_json::from_str(SWITCH_RSTB_JSON).unwrap();
-        let u: Value = serde_json::from_str(WIIU_RSTB_JSON).unwrap();
-        nx["crc_map"]
-            .as_object()
-            .unwrap()
-            .keys()
-            .chain(u["crc_map"].as_object().unwrap().keys())
-            .map(|s| (CRC32.checksum(s.as_bytes()), s.to_owned()))
-            .collect()
-    };
-}
+pub(crate) static SWITCH_RSTB: LazyLock<ResourceSizeTable> = LazyLock::new(|| {
+    serde_json::from_str(SWITCH_RSTB_JSON.as_ref()).expect("Ref JSON is good, tho")
+});
+pub(crate) static WIIU_RSTB: LazyLock<ResourceSizeTable> =
+    LazyLock::new(|| serde_json::from_str(WIIU_RSTB_JSON.as_ref()).expect("Ref JSON is good, tho"));
+pub(crate) static FILE_HASHES: LazyLock<HashMap<u32, String>> = LazyLock::new(|| {
+    let nx: Value = serde_json::from_str(SWITCH_RSTB_JSON.as_ref()).expect("Ref JSON is good, tho");
+    let u: Value = serde_json::from_str(WIIU_RSTB_JSON.as_ref()).expect("Ref JSON is good, tho");
+    nx["crc_map"]
+        .as_object()
+        .expect("Impossible")
+        .keys()
+        .chain(u["crc_map"].as_object().expect("Impossible").keys())
+        .map(|s| (CRC32.checksum(s.as_bytes()), s.to_owned()))
+        .collect()
+});
 
 #[cfg(test)]
 mod tests {

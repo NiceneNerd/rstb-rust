@@ -139,32 +139,32 @@ fn parse_defparams(obj: &ParameterObject, size: &mut u32, endian: Endian) {
         };
         *size += sinst_num_params * ptr_size;
         for (_, p) in obj.iter() {
-            if let Ok(_) = p.as_bool() {
+            if p.as_bool().is_ok() {
                 *size += match endian {
                     Endian::Big => size_of::<Parameter<u32, Bool32>>() as u32,
                     Endian::Little => size_of::<Parameter<u64, Bool32>>() as u32,
                 };
-            } else if let Ok(_) = p.as_u32() {
+            } else if p.as_u32().is_ok() {
                 *size += match endian {
                     Endian::Big => size_of::<Parameter<u32, U32>>() as u32,
                     Endian::Little => size_of::<Parameter<u64, U32>>() as u32,
                 };
-            } else if let Ok(_) = p.as_i32() {
+            } else if p.as_i32().is_ok() {
                 *size += match endian {
                     Endian::Big => size_of::<Parameter<u32, S32>>() as u32,
                     Endian::Little => size_of::<Parameter<u64, S32>>() as u32,
                 };
-            } else if let Ok(_) = p.as_f32() {
+            } else if p.as_f32().is_ok() {
                 *size += match endian {
                     Endian::Big => size_of::<Parameter<u32, F32>>() as u32,
                     Endian::Little => size_of::<Parameter<u64, F32>>() as u32,
                 };
-            } else if let Ok(_) = p.as_str() {
+            } else if p.as_str().is_ok() {
                 *size += match endian {
                     Endian::Big => size_of::<Parameter<u32, SafeString<u32>>>() as u32,
                     Endian::Little => size_of::<Parameter<u64, SafeString<u64>>>() as u32,
                 };
-            } else if let Ok(_) = p.as_vec3() {
+            } else if p.as_vec3().is_ok() {
                 *size += match endian {
                     Endian::Big => size_of::<Parameter<u32, Vector3f>>() as u32,
                     Endian::Little => size_of::<Parameter<u64, Vector3f>>() as u32,
