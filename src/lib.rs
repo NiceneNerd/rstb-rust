@@ -45,8 +45,10 @@
 //!   serialization in the [`to_text()`](ResourceSizeTable::to_text()) method if `json` is enabled,
 //!   and more importantly enables the [`new_from_stock()`](ResourceSizeTable::new_from_stock)
 //!   method to create a copy of the original BOTW RSTB (1.5.0 Wii U or 1.6.0 Switch).
-#![feature(exclusive_range_pattern)]
-#![cfg_attr(feature = "botw-data", feature(once_cell))]
+#![cfg_attr(
+    all(feature = "botw-data", not(feature = "stable")),
+    feature(lazy_cell)
+)]
 #![deny(clippy::unwrap_used)]
 
 mod bin;
