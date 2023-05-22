@@ -12,31 +12,27 @@ const CLASS_SIZE_NX: u32 = 0x448;
 
 const BAIPROG_OVERHEAD: u32 = 0xe6;
 
-pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
+pub fn parse_size(bytes: &[u8], endian: Endian) -> Option<u32> {
     let mut total_size = match endian {
         Endian::Big => super::PARSE_CONST_WIIU + CLASS_SIZE_WIIU,
         Endian::Little => super::PARSE_CONST_NX + CLASS_SIZE_NX,
     };
     total_size += BAIPROG_OVERHEAD;
-    let a = ParameterIO::from_binary(bytes).unwrap();
+    let a = ParameterIO::from_binary(bytes).ok()?;
 
-    let ai = a.param_root.lists.get("AI").unwrap();
+    let ai = a.param_root.lists.get("AI")?;
     let num_ai = ai.lists.len() as u32;
     if num_ai > 0 {
         for i in 0..num_ai {
-            parse_aiaction(
-                ai.lists.get(format!("AI_{}", i)).unwrap(),
-                &mut total_size,
-                endian,
-            );
+            parse_aiaction(ai.lists.get(format!("AI_{}", i))?, &mut total_size, endian);
         }
     }
-    let action = a.param_root.lists.get("Action").unwrap();
+    let action = a.param_root.lists.get("Action")?;
     let num_action = action.lists.len() as u32;
     if num_action > 0 {
         for i in 0..num_action {
             parse_aiaction(
-                action.lists.get(format!("Action_{}", i)).unwrap(),
+                action.lists.get(format!("Action_{}", i))?,
                 &mut total_size,
                 endian,
             );
@@ -47,7 +43,7 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
         if num_behavior > 0 {
             for i in 0..num_behavior {
                 parse_behavior(
-                    behavior.lists.get(format!("Behavior_{}", i)).unwrap(),
+                    behavior.lists.get(format!("Behavior_{}", i))?,
                     &mut total_size,
                     endian,
                 );
@@ -59,7 +55,7 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
         if num_query > 0 {
             for i in 0..num_query {
                 parse_query(
-                    query.lists.get(format!("Query_{}", i)).unwrap(),
+                    query.lists.get(format!("Query_{}", i))?,
                     &mut total_size,
                     endian,
                 );
@@ -73,7 +69,7 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
         parse_behavioridx(behavior_idx_obj, &mut total_size);
     }
 
-    total_size
+    Some(total_size)
 }
 
 fn parse_aiactionidx(obj: &ParameterObject, size: &mut u32) {

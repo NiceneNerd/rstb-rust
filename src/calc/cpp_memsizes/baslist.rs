@@ -10,13 +10,13 @@ const CLASS_SIZE_NX: u32 = 0x410;
 
 const BASLIST_OVERHEAD: u32 = 0x80;
 
-pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
+pub fn parse_size(bytes: &[u8], endian: Endian) -> Option<u32> {
     let mut total_size = match endian {
         Endian::Big => super::PARSE_CONST_WIIU + CLASS_SIZE_WIIU,
         Endian::Little => super::PARSE_CONST_NX + CLASS_SIZE_NX,
     };
     total_size += BASLIST_OVERHEAD;
-    let a = ParameterIO::from_binary(bytes).unwrap();
+    let a = ParameterIO::from_binary(bytes).ok()?;
     let (asdefine_size, cfdefine_size, cfpost_size, cfexcept_size, addres_size): (
         u32,
         u32,
@@ -50,7 +50,7 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
                 if num_cfdefines > 0 {
                     total_size += num_cfdefines * cfdefine_size;
                     for i in 0..num_cfdefines {
-                        let cfdefine = cfdefine_list.lists.get(format!("CFDefine_{}", i)).unwrap();
+                        let cfdefine = cfdefine_list.lists.get(format!("CFDefine_{}", i))?;
                         if let Some(cfpost_list) = cfdefine.lists.get("CFPosts") {
                             let num_cfposts = cfpost_list.objects.len() as u32;
                             total_size += num_cfposts * cfpost_size;
@@ -71,5 +71,5 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
         }
     }
 
-    total_size
+    Some(total_size)
 }

@@ -11,13 +11,13 @@ const CLASS_SIZE_NX: u32 = 0x7d0;
 const BMODELLIST_OVERHEAD: u32 = 0x74;
 const NUM_UNIT_MAX: u32 = 8;
 
-pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
+pub fn parse_size(bytes: &[u8], endian: Endian) -> Option<u32> {
     let mut total_size = match endian {
         Endian::Big => super::PARSE_CONST_WIIU + CLASS_SIZE_WIIU,
         Endian::Little => super::PARSE_CONST_NX + CLASS_SIZE_NX,
     };
     total_size += BMODELLIST_OVERHEAD;
-    let a = ParameterIO::from_binary(bytes).unwrap();
+    let a = ParameterIO::from_binary(bytes).ok()?;
     let (anmtarget_size, modeldata_size, partial_size, unit_size): (u32, u32, u32, u32);
     match endian {
         Endian::Big => {
@@ -66,5 +66,5 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
             }
         }
     }
-    total_size
+    Some(total_size)
 }

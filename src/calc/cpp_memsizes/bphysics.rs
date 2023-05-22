@@ -17,13 +17,13 @@ const PARAMSET_OVERHEAD: u32 = 0xdc; // for sizeof(phys::ParamSet) - shouldn't b
 // for some reason const PARAMSET_OVERHEAD: u32 = 0x1a8; // perhaps overly cautious overhead. fall
 // back to this if 0xdc doesn't work
 
-pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
+pub fn parse_size(bytes: &[u8], endian: Endian) -> Option<u32> {
     let mut total_size = match endian {
         Endian::Big => super::PARSE_CONST_WIIU + CLASS_SIZE_WIIU,
         Endian::Little => super::PARSE_CONST_NX + CLASS_SIZE_NX,
     };
     total_size += PARAMSET_OVERHEAD;
-    let a = ParameterIO::from_binary(bytes).unwrap();
+    let a = ParameterIO::from_binary(bytes).ok()?;
     let (rigidbodysetparam_size, rigidbodyparam_size, shapeparamobj_size, vertex_size): (
         u32,
         u32,
@@ -87,11 +87,10 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
 
     if let Some(paramset) = a.param_root.lists.get("ParamSet") {
         if let Some(paramsetheader) = paramset.objects.get("ParamSetHeader") {
-            let num_rigid_body_sets = paramsetheader
-                .get("use_rigid_body_set_num")
-                .unwrap()
-                .as_i32()
-                .unwrap() as u32;
+            let num_rigid_body_sets: u32 = paramsetheader
+                .get("use_rigid_body_set_num")?
+                .as_int()
+                .ok()?;
             if num_rigid_body_sets > 0 {
                 total_size += num_rigid_body_sets * rigidbodysetparam_size;
                 for i in 0..num_rigid_body_sets {
@@ -102,8 +101,8 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
                             if let Some(rigidbodysetheader) =
                                 rigidbodyset.objects.get("RigidBodySetHeader")
                             {
-                                let num_rigid_bodies =
-                                    rigidbodysetheader.get("num").unwrap().as_i32().unwrap() as u32;
+                                let num_rigid_bodies: u32 =
+                                    rigidbodysetheader.get("num")?.as_int().ok()?;
                                 total_size += num_rigid_bodies * rigidbodyparam_size;
                                 for j in 0..num_rigid_bodies {
                                     if let Some(rigidbody) =
@@ -114,7 +113,7 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
                                         {
                                             if let Some(shape_num) = rigidbodyparam.get("shape_num")
                                             {
-                                                let num_shapes = shape_num.as_i32().unwrap() as u32;
+                                                let num_shapes: u32 = shape_num.as_int().ok()?;
                                                 total_size += num_shapes * shapeparamobj_size;
                                                 for k in 0..num_shapes {
                                                     if let Some(shapeparam) = rigidbody
@@ -124,8 +123,8 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
                                                         if let Some(vertex_num) =
                                                             shapeparam.get("vertex_num")
                                                         {
-                                                            let num_vertices =
-                                                                vertex_num.as_i32().unwrap() as u32;
+                                                            let num_vertices: u32 =
+                                                                vertex_num.as_int().ok()?;
                                                             total_size +=
                                                                 num_vertices * vertex_size;
                                                         }
@@ -141,37 +140,31 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
                 }
             }
             if paramsetheader
-                .get("use_character_controller")
-                .unwrap()
+                .get("use_character_controller")?
                 .as_bool()
-                .unwrap()
+                .ok()?
             {
                 total_size += charactercontrollerparam_size;
                 if let Some(charactercontroller) = paramset.lists.get("CharacterController") {
                     if let Some(charactercontrollerparam) =
                         charactercontroller.objects.get("CharacterControllerParam")
                     {
-                        let num_forms = charactercontrollerparam
-                            .get("form_num")
-                            .unwrap()
-                            .as_i32()
-                            .unwrap() as u32;
+                        let num_forms: u32 =
+                            charactercontrollerparam.get("form_num")?.as_int().ok()?;
                         total_size += num_forms * form_size;
                         for i in 0..num_forms {
                             if let Some(form) = charactercontroller.lists.get(format!("Form_{}", i))
                             {
                                 if let Some(formheader) = form.objects.get("FormHeader") {
-                                    let num_shapes =
-                                        formheader.get("shape_num").unwrap().as_i32().unwrap()
-                                            as u32;
+                                    let num_shapes: u32 =
+                                        formheader.get("shape_num")?.as_int().ok()?;
                                     total_size += num_shapes * shapeparamobj_size;
                                     for j in 0..num_shapes {
                                         if let Some(shapeparam) =
                                             form.objects.get(format!("ShapeParam_{}", j))
                                         {
                                             if let Some(vertex_num) = shapeparam.get("vertex_num") {
-                                                let num_vertices =
-                                                    vertex_num.as_i32().unwrap() as u32;
+                                                let num_vertices: u32 = vertex_num.as_int().ok()?;
                                                 total_size += num_vertices * vertex_size;
                                             }
                                         }
@@ -182,68 +175,49 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
                     }
                 }
             }
-            if paramsetheader
-                .get("use_contact_info")
-                .unwrap()
-                .as_bool()
-                .unwrap()
-            {
+            if paramsetheader.get("use_contact_info")?.as_bool().ok()? {
                 total_size += contactinfoparam_size;
                 if let Some(rigidcontactinfo) = paramset.lists.get("RigidContactInfo") {
                     if let Some(rigidcontactinfoheader) =
                         rigidcontactinfo.objects.get("RigidContactInfoHeader")
                     {
-                        let num_contact_point_info = rigidcontactinfoheader
-                            .get("contact_point_info_num")
-                            .unwrap()
-                            .as_i32()
-                            .unwrap() as u32;
+                        let num_contact_point_info: u32 = rigidcontactinfoheader
+                            .get("contact_point_info_num")?
+                            .as_int()
+                            .ok()?;
                         total_size += num_contact_point_info * contactpointinfoparam_size;
-                        let num_collision_info = rigidcontactinfoheader
-                            .get("collision_info_num")
-                            .unwrap()
-                            .as_i32()
-                            .unwrap() as u32;
+                        let num_collision_info: u32 = rigidcontactinfoheader
+                            .get("collision_info_num")?
+                            .as_int()
+                            .ok()?;
                         total_size += num_collision_info * collisioninfoparam_size;
                     }
                 }
             }
-            if paramsetheader
-                .get("use_support_bone")
-                .unwrap()
-                .as_bool()
-                .unwrap()
-            {
+            if paramsetheader.get("use_support_bone")?.as_bool().ok()? {
                 total_size += supportboneparam_size;
             }
-            if paramsetheader
-                .get("use_ragdoll")
-                .unwrap()
-                .as_bool()
-                .unwrap()
-            {
+            if paramsetheader.get("use_ragdoll")?.as_bool().ok()? {
                 total_size += ragdollparam_size;
             }
-            if paramsetheader.get("use_cloth").unwrap().as_bool().unwrap() {
+            if paramsetheader.get("use_cloth")?.as_bool().ok()? {
                 total_size += clothsetparam_size;
                 if let Some(clothlist) = paramset.lists.get("Cloth") {
                     if let Some(clothheader) = clothlist.objects.get("ClothHeader") {
-                        let num_cloth =
-                            clothheader.get("cloth_num").unwrap().as_i32().unwrap() as u32;
+                        let num_cloth: u32 = clothheader.get("cloth_num")?.as_int().ok()?;
                         total_size += num_cloth * clothparam_size;
                     }
                 }
             }
-            let num_edge_rigid_bodies = paramsetheader
-                .get("use_edge_rigid_body_num")
-                .unwrap()
-                .as_i32()
-                .unwrap() as u32;
+            let num_edge_rigid_bodies: u32 = paramsetheader
+                .get("use_edge_rigid_body_num")?
+                .as_int()
+                .ok()?;
             if num_edge_rigid_bodies > 0 {
                 total_size += edgerigidbodysetparam_size;
                 total_size += num_edge_rigid_bodies * edgerigidbodyparam_size;
             }
         }
     }
-    total_size
+    Some(total_size)
 }

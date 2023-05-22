@@ -292,7 +292,7 @@ fn calc_or_estimate_from_bytes_and_name(
                 if estimate {
                     match ext {
                         #[cfg(feature = "complex")]
-                        "baiprog" => Some(rounded + baiprog::parse_size(bytes, endian)),
+                        "baiprog" => Some(rounded + baiprog::parse_size(bytes, endian)?),
                         "baniminfo" => {
                             Some(
                                 ((rounded as f32 * (if filesize > 36864 { 1.5 } else { 4.0 }))
@@ -306,22 +306,22 @@ fn calc_or_estimate_from_bytes_and_name(
                             )
                         }
                         #[cfg(feature = "complex")]
-                        "baslist" => Some(rounded + baslist::parse_size(bytes, endian)),
+                        "baslist" => Some(rounded + baslist::parse_size(bytes, endian)?),
                         #[cfg(feature = "complex")]
-                        "bdrop" => Some(rounded + bdrop::parse_size(bytes, endian)),
+                        "bdrop" => Some(rounded + bdrop::parse_size(bytes, endian)?),
                         "bfres" => Some(estimate_bfres(filesize, endian)),
                         #[cfg(feature = "complex")]
-                        "bgparamlist" => Some(rounded + bgparamlist::parse_size(bytes, endian)),
+                        "bgparamlist" => Some(rounded + bgparamlist::parse_size(bytes, endian)?),
                         #[cfg(feature = "complex")]
-                        "bmodellist" => Some(rounded + bmodellist::parse_size(bytes, endian)),
+                        "bmodellist" => Some(rounded + bmodellist::parse_size(bytes, endian)?),
                         #[cfg(feature = "complex")]
-                        "bphysics" => Some(rounded + bphysics::parse_size(bytes, endian)),
+                        "bphysics" => Some(rounded + bphysics::parse_size(bytes, endian)?),
                         #[cfg(feature = "complex")]
-                        "brecipe" => Some(rounded + brecipe::parse_size(bytes, endian)),
+                        "brecipe" => Some(rounded + brecipe::parse_size(bytes, endian)?),
                         #[cfg(feature = "complex")]
-                        "bshop" => Some(rounded + bshop::parse_size(bytes, endian)),
+                        "bshop" => Some(rounded + bshop::parse_size(bytes, endian)?),
                         #[cfg(feature = "complex")]
-                        "bxml" => Some(rounded + bxml::parse_size(bytes, endian)),
+                        "bxml" => Some(rounded + bxml::parse_size(bytes, endian)?),
                         "hknm2" => {
                             Some(
                                 rounded

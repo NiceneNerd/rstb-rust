@@ -9,16 +9,16 @@ const OVERHEAD_WIIU: usize = 0x64;
 const OVERHEAD_NX: usize = 0x44;
 const TAG_SIZE: usize = std::mem::size_of::<u32>();
 
-pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
+pub fn parse_size(bytes: &[u8], endian: Endian) -> Option<u32> {
     let mut total_size: usize = match endian {
         Endian::Big => super::PARSE_CONST_WIIU as usize + CLASS_SIZE_WIIU + OVERHEAD_WIIU,
         Endian::Little => super::PARSE_CONST_NX as usize + CLASS_SIZE_NX + OVERHEAD_NX,
     };
-    let a = ParameterIO::from_binary(bytes).unwrap();
+    let a = ParameterIO::from_binary(bytes).ok()?;
 
     if let Some(tags) = a.param_root.objects.get("Tags") {
         total_size += TAG_SIZE * tags.len();
     }
 
-    total_size as u32
+    Some(total_size as u32)
 }

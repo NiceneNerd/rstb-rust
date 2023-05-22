@@ -1,6 +1,6 @@
 [package]
 name = "rstb"
-version = "0.7.0"
+version = "0.8.0"
 description = "Rust library for manipulating Breath of the Wild's resource size table"
 documentation = "https://docs.rs/rstb"
 repository = "https://github.com/NiceneNerd/rstb-rust"

@@ -173,21 +173,21 @@ static OBJ_SIZES_NX: Map<&'static str, u32> = phf_map! {
     "Zora" => size_of::<GParamListObjectZora<u64>>() as u32,
 };
 
-pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
+pub fn parse_size(bytes: &[u8], endian: Endian) -> Option<u32> {
     let mut total_size = match endian {
         Endian::Big => super::PARSE_CONST_WIIU + CLASS_SIZE_WIIU,
         Endian::Little => super::PARSE_CONST_NX + CLASS_SIZE_NX,
     };
     total_size += BGPARAM_OVERHEAD;
-    let a = ParameterIO::from_binary(bytes).unwrap();
+    let a = ParameterIO::from_binary(bytes).ok()?;
     let obj_map: &Map<&'static str, u32> = match endian {
         Endian::Big => &OBJ_SIZES_WIIU,
         Endian::Little => &OBJ_SIZES_NX,
     };
     for (name, size) in (*obj_map).into_iter() {
-        if let Some(_) = a.param_root.objects.get(*name) {
+        if a.param_root.objects.get(*name).is_some() {
             total_size += size;
         }
     }
-    total_size
+    Some(total_size)
 }

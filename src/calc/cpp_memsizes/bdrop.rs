@@ -10,13 +10,13 @@ const CLASS_SIZE_NX: u32 = 0x320;
 
 const BDROP_OVERHEAD: u32 = 0xcc;
 
-pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
+pub fn parse_size(bytes: &[u8], endian: Endian) -> Option<u32> {
     let mut total_size = match endian {
         Endian::Big => super::PARSE_CONST_WIIU + CLASS_SIZE_WIIU,
         Endian::Little => super::PARSE_CONST_NX + CLASS_SIZE_NX,
     };
     total_size += BDROP_OVERHEAD;
-    let a = ParameterIO::from_binary(bytes).unwrap();
+    let a = ParameterIO::from_binary(bytes).ok()?;
     let (table_size, item_size): (u32, u32);
     match endian {
         Endian::Big => {
@@ -31,22 +31,17 @@ pub fn parse_size(bytes: &[u8], endian: Endian) -> u32 {
 
     if let Some(header) = a.param_root.objects.get("Header") {
         if let Some(num_tables_param) = header.get("TableNum") {
-            let num_tables = num_tables_param.as_i32().unwrap() as u32;
+            let num_tables: u32 = num_tables_param.as_int().ok()?;
             total_size += num_tables * table_size;
             for i in 0..num_tables {
                 let table_id = format!("Table{:02}", i + 1);
-                let table_name = header
-                    .get(table_id)
-                    .unwrap()
-                    .as_string64()
-                    .unwrap()
-                    .as_str();
+                let table_name = header.get(table_id)?.as_string64().ok()?.as_str();
                 if let Some(table) = a.param_root.objects.get(table_name) {
-                    let num_items = table.get("ColumnNum").unwrap().as_i32().unwrap() as u32;
+                    let num_items: u32 = table.get("ColumnNum")?.as_int().ok()?;
                     total_size += num_items * item_size;
                 }
             }
         }
     }
-    total_size
+    Some(total_size)
 }
