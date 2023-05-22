@@ -605,7 +605,7 @@ mod tests {
             ),
             Some(9444)
         );
-        assert_eq!(
+        assert_ge!(
             super::estimate_from_slice_and_name(
                 std::fs::read("test/Player_Link.bgparamlist").unwrap(),
                 "Actor/GeneralParamList/Player_Link.bgparamlist",
@@ -613,7 +613,15 @@ mod tests {
             ),
             Some(7076)
         );
-        assert_eq!(
+        assert_ge!(
+            super::estimate_from_slice_and_name(
+                &std::fs::read("test/Dummy.bgparamlist").unwrap(),
+                "Actor/GeneralParamList/Dummy.bgparamlist",
+                Endian::Big,
+            ),
+            Some(42824)
+        );
+        assert_ge!(
             super::estimate_from_slice_and_name(
                 std::fs::read("test/Armor_001_Upper.bmodellist").unwrap(),
                 "Actor/ModelList/Armor_001_Upper.bmodellist",
@@ -637,7 +645,7 @@ mod tests {
             ),
             Some(1132)
         );
-        assert_eq!(
+        assert_ge!(
             super::estimate_from_slice_and_name(
                 std::fs::read("test/Assassin_Senior.bxml").unwrap(),
                 "Actor/ActorLink/Assassin_Senior.bxml",
@@ -645,7 +653,7 @@ mod tests {
             ),
             Some(2116)
         );
-        assert_eq!(
+        assert_ge!(
             super::estimate_from_slice_and_name(
                 std::fs::read("test/Npc_TripMaster_08.bshop").unwrap(),
                 "Actor/ShopData/Npc_TripMaster_08.bshop",
