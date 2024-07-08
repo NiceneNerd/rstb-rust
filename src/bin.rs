@@ -101,7 +101,7 @@ impl ResourceSizeTable {
                 .compress_and_write(&self.to_binary(endian), yaz0::CompressionLevel::Naive {
                     quality: 7,
                 })
-                .unwrap();
+                .expect("Should be able to compress without error");
         }
         buf
     }

@@ -10,13 +10,13 @@ impl ResourceSizeTable {
     /// *Requires the `json` feature.*
     /// Generate a JSON string representation of this RSTB.
     pub fn to_text(&self) -> String {
-        serde_json::to_string(self).unwrap()
+        serde_json::to_string(self).expect("RSTB should serialize without error")
     }
 
     /// *Requires the `json` feature.*
     /// Generate a JSON string representation of this RSTB, pretty-printed.
     pub fn to_text_pretty(&self) -> String {
-        serde_json::to_string_pretty(self).unwrap()
+        serde_json::to_string_pretty(self).expect("RSTB should serialize without error")
     }
 
     /// *Requires the `json` feature.*

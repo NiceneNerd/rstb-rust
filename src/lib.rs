@@ -49,7 +49,7 @@
     all(feature = "botw-data", not(feature = "stable")),
     feature(lazy_cell)
 )]
-#![deny(clippy::unwrap_used)]
+#![cfg_attr(not(test), deny(clippy::unwrap_used))]
 
 mod bin;
 #[cfg(feature = "botw-data")]

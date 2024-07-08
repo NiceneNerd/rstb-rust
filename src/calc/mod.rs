@@ -587,7 +587,7 @@ mod tests {
     fn estimate_sizes_complex() {
         assert_eq!(
             super::estimate_from_slice_and_name(
-                &std::fs::read("test/Animal_Bass.Tex1.sbfres").unwrap(),
+                std::fs::read("test/Animal_Bass.Tex1.sbfres").unwrap(),
                 "Model/Animal_Bass.Tex1.sbfres",
                 Endian::Big
             ),
@@ -595,7 +595,7 @@ mod tests {
         );
         assert_ge!(
             super::estimate_from_slice_and_name(
-                &std::fs::read("test/DgnMrgPrt_Dungeon061.sbfres").unwrap(),
+                std::fs::read("test/DgnMrgPrt_Dungeon061.sbfres").unwrap(),
                 "Model/DgnMrgPrt_Dungeon061.sbfres",
                 Endian::Big,
             ),
@@ -603,7 +603,7 @@ mod tests {
         );
         assert_ge!(
             super::estimate_from_slice_and_name(
-                &std::fs::read("test/NpcGerudoQueenBattle.baiprog").unwrap(),
+                std::fs::read("test/NpcGerudoQueenBattle.baiprog").unwrap(),
                 "Actor/AIProgram/NpcGerudoQueenBattle.baiprog",
                 Endian::Big,
             ),
@@ -611,7 +611,7 @@ mod tests {
         );
         assert_eq!(
             super::estimate_from_slice_and_name(
-                &std::fs::read("test/Player_Link.bgparamlist").unwrap(),
+                std::fs::read("test/Player_Link.bgparamlist").unwrap(),
                 "Actor/GeneralParamList/Player_Link.bgparamlist",
                 Endian::Big,
             ),
@@ -619,7 +619,7 @@ mod tests {
         );
         assert_eq!(
             super::estimate_from_slice_and_name(
-                &std::fs::read("test/Armor_001_Upper.bmodellist").unwrap(),
+                std::fs::read("test/Armor_001_Upper.bmodellist").unwrap(),
                 "Actor/ModelList/Armor_001_Upper.bmodellist",
                 Endian::Big,
             ),
@@ -627,7 +627,7 @@ mod tests {
         );
         assert_ge!(
             super::estimate_from_slice_and_name(
-                &std::fs::read("test/Armor_002_Upper.brecipe").unwrap(),
+                std::fs::read("test/Armor_002_Upper.brecipe").unwrap(),
                 "Actor/ModelList/Armor_002_Upper.brecipe",
                 Endian::Big,
             ),
@@ -635,7 +635,7 @@ mod tests {
         );
         assert_ge!(
             super::estimate_from_slice_and_name(
-                &std::fs::read("test/Assassin_Senior.bdrop").unwrap(),
+                std::fs::read("test/Assassin_Senior.bdrop").unwrap(),
                 "Actor/DropTable/Assassin_Senior.bdrop",
                 Endian::Big,
             ),
@@ -643,7 +643,7 @@ mod tests {
         );
         assert_eq!(
             super::estimate_from_slice_and_name(
-                &std::fs::read("test/Assassin_Senior.bxml").unwrap(),
+                std::fs::read("test/Assassin_Senior.bxml").unwrap(),
                 "Actor/ActorLink/Assassin_Senior.bxml",
                 Endian::Big,
             ),
@@ -651,7 +651,7 @@ mod tests {
         );
         assert_eq!(
             super::estimate_from_slice_and_name(
-                &std::fs::read("test/Npc_TripMaster_08.bshop").unwrap(),
+                std::fs::read("test/Npc_TripMaster_08.bshop").unwrap(),
                 "Actor/ShopData/Npc_TripMaster_08.bshop",
                 Endian::Big,
             ),
@@ -659,7 +659,7 @@ mod tests {
         );
         assert_ge!(
             super::estimate_from_slice_and_name(
-                &std::fs::read("test/Player_Link.bphysics").unwrap(),
+                std::fs::read("test/Player_Link.bphysics").unwrap(),
                 "Actor/Physics/Player_Link.bphysics",
                 Endian::Big,
             ),
@@ -1015,7 +1015,6 @@ mod tests {
                     let sarc = sarc::Sarc::new(std::fs::read(&path).unwrap()).unwrap();
                     let bxml = ParameterIO::from_binary(
                         sarc.get_data(&format!("Actor/ActorLink/{}.bxml", actorname))
-                            .unwrap()
                             .unwrap(),
                     )
                     .unwrap();
@@ -1032,7 +1031,7 @@ mod tests {
                     if param_name.contains("Dummy") | result.contains(&param_name) {
                         continue;
                     }
-                    if let Some(o_file) = sarc.get_data(&param_name).unwrap() {
+                    if let Some(o_file) = sarc.get_data(&param_name) {
                         if let Some(rstb_entry) = rstable.get(param_name.as_str()) {
                             let calc_size = super::estimate_from_bytes_and_name(
                                 o_file,
@@ -1074,7 +1073,6 @@ mod tests {
                     let sarc = sarc::Sarc::new(std::fs::read(&path).unwrap()).unwrap();
                     let bxml = ParameterIO::from_binary(
                         sarc.get_data(&format!("Actor/ActorLink/{}.bxml", actorname))
-                            .unwrap()
                             .unwrap(),
                     )
                     .unwrap();
@@ -1091,7 +1089,7 @@ mod tests {
                     if param_name.contains("Dummy") | result.contains(&param_name) {
                         continue;
                     }
-                    if let Some(o_file) = sarc.get_data(&param_name).unwrap() {
+                    if let Some(o_file) = sarc.get_data(&param_name) {
                         if let Some(rstb_entry) = rstable.get(param_name.as_str()) {
                             let calc_size = super::estimate_from_bytes_and_name(
                                 o_file,
@@ -1133,7 +1131,6 @@ mod tests {
                     let sarc = sarc::Sarc::new(std::fs::read(&path).unwrap()).unwrap();
                     let bxml = ParameterIO::from_binary(
                         sarc.get_data(&format!("Actor/ActorLink/{}.bxml", actorname))
-                            .unwrap()
                             .unwrap(),
                     )
                     .unwrap();
@@ -1150,7 +1147,7 @@ mod tests {
                     if param_name.contains("Dummy") | result.contains(&param_name) {
                         continue;
                     }
-                    if let Some(o_file) = sarc.get_data(&param_name).unwrap() {
+                    if let Some(o_file) = sarc.get_data(&param_name) {
                         if let Some(rstb_entry) = rstable.get(param_name.as_str()) {
                             let calc_size = super::estimate_from_bytes_and_name(
                                 o_file,
@@ -1192,7 +1189,6 @@ mod tests {
                     let sarc = sarc::Sarc::new(std::fs::read(&path).unwrap()).unwrap();
                     let bxml = ParameterIO::from_binary(
                         sarc.get_data(&format!("Actor/ActorLink/{}.bxml", actorname))
-                            .unwrap()
                             .unwrap(),
                     )
                     .unwrap();
@@ -1209,7 +1205,7 @@ mod tests {
                     if param_name.contains("Dummy") | result.contains(&param_name) {
                         continue;
                     }
-                    if let Some(o_file) = sarc.get_data(&param_name).unwrap() {
+                    if let Some(o_file) = sarc.get_data(&param_name) {
                         if let Some(rstb_entry) = rstable.get(param_name.as_str()) {
                             let calc_size = super::estimate_from_bytes_and_name(
                                 o_file,
@@ -1251,7 +1247,6 @@ mod tests {
                     let sarc = sarc::Sarc::new(std::fs::read(&path).unwrap()).unwrap();
                     let bxml = ParameterIO::from_binary(
                         sarc.get_data(&format!("Actor/ActorLink/{}.bxml", actorname))
-                            .unwrap()
                             .unwrap(),
                     )
                     .unwrap();
@@ -1268,7 +1263,7 @@ mod tests {
                     if param_name.contains("Dummy") | result.contains(&param_name) {
                         continue;
                     }
-                    if let Some(o_file) = sarc.get_data(&param_name).unwrap() {
+                    if let Some(o_file) = sarc.get_data(&param_name) {
                         if let Some(rstb_entry) = rstable.get(param_name.as_str()) {
                             let calc_size = super::estimate_from_bytes_and_name(
                                 o_file,
@@ -1310,7 +1305,6 @@ mod tests {
                     let sarc = sarc::Sarc::new(std::fs::read(&path).unwrap()).unwrap();
                     let bxml = ParameterIO::from_binary(
                         sarc.get_data(&format!("Actor/ActorLink/{}.bxml", actorname))
-                            .unwrap()
                             .unwrap(),
                     )
                     .unwrap();
@@ -1327,7 +1321,7 @@ mod tests {
                     if param_name.contains("Dummy") | result.contains(&param_name) {
                         continue;
                     }
-                    if let Some(o_file) = sarc.get_data(&param_name).unwrap() {
+                    if let Some(o_file) = sarc.get_data(&param_name) {
                         if let Some(rstb_entry) = rstable.get(param_name.as_str()) {
                             let calc_size = super::estimate_from_bytes_and_name(
                                 o_file,
@@ -1369,7 +1363,6 @@ mod tests {
                     let sarc = sarc::Sarc::new(std::fs::read(&path).unwrap()).unwrap();
                     let bxml = ParameterIO::from_binary(
                         sarc.get_data(&format!("Actor/ActorLink/{}.bxml", actorname))
-                            .unwrap()
                             .unwrap(),
                     )
                     .unwrap();
@@ -1386,7 +1379,7 @@ mod tests {
                     if param_name.contains("Dummy") | result.contains(&param_name) {
                         continue;
                     }
-                    if let Some(o_file) = sarc.get_data(&param_name).unwrap() {
+                    if let Some(o_file) = sarc.get_data(&param_name) {
                         if let Some(rstb_entry) = rstable.get(param_name.as_str()) {
                             let calc_size = super::estimate_from_bytes_and_name(
                                 o_file,
@@ -1428,7 +1421,6 @@ mod tests {
                     let sarc = sarc::Sarc::new(std::fs::read(&path).unwrap()).unwrap();
                     let bxml = ParameterIO::from_binary(
                         sarc.get_data(&format!("Actor/ActorLink/{}.bxml", actorname))
-                            .unwrap()
                             .unwrap(),
                     )
                     .unwrap();
@@ -1445,7 +1437,7 @@ mod tests {
                     if param_name.contains("Dummy") | result.contains(&param_name) {
                         continue;
                     }
-                    if let Some(o_file) = sarc.get_data(&param_name).unwrap() {
+                    if let Some(o_file) = sarc.get_data(&param_name) {
                         if let Some(rstb_entry) = rstable.get(param_name.as_str()) {
                             let calc_size = super::estimate_from_bytes_and_name(
                                 o_file,
@@ -1489,7 +1481,7 @@ mod tests {
                     if param_name.contains("Dummy") | result.contains(&param_name) {
                         continue;
                     }
-                    let bxml_bytes = sarc.get_data(&param_name).unwrap().unwrap();
+                    let bxml_bytes = sarc.get_data(&param_name).unwrap();
                     if let Some(rstb_entry) = rstable.get(param_name.as_str()) {
                         let calc_size = super::estimate_from_bytes_and_name(
                             bxml_bytes,
@@ -1531,7 +1523,7 @@ mod tests {
                     if param_name.contains("Dummy") | result.contains(&param_name) {
                         continue;
                     }
-                    let bxml_bytes = sarc.get_data(&param_name).unwrap().unwrap();
+                    let bxml_bytes = sarc.get_data(&param_name).unwrap();
                     if let Some(rstb_entry) = rstable.get(param_name.as_str()) {
                         let calc_size = super::estimate_from_bytes_and_name(
                             bxml_bytes,
