@@ -1,6 +1,6 @@
 [package]
 name = "rstb"
-version = "0.9.0"
+version = "1.0.0"
 description = "Rust library for manipulating Breath of the Wild's resource size table"
 documentation = "https://docs.rs/rstb"
 repository = "https://github.com/NiceneNerd/rstb-rust"
@@ -8,8 +8,9 @@ readme = "README.md"
 keywords = ["Nintendo", "rstb", "Zelda", "botw", "gamedev"]
 categories = ["parsing", "game-development"]
 license = "MIT"
-authors = ["Caleb Smith <macadamiadaze@gmail.com>"]
+authors = ["Caleb Smith <c.smith@tuta.io>"]
 edition = "2021"
+rust-version = "1.80"
 exclude = ["/test"]
 
 [package.metadata.docs.rs]
@@ -19,7 +20,6 @@ features = ["json", "botw-data", "yaz0", "complex", "complex_testing"]
 crc = "3.2"
 include-flate = { version = "0.3.0", optional = true }
 glob = { version = "0.3.0", optional = true }
-once_cell = { version = "1.19", optional = true }
 phf = { version = "0.11", features = ["macros"], optional = true }
 roead = { version = "0.25.3", features = [
     "aamp",
@@ -35,7 +35,6 @@ yaz0 = { version = "0.3.0", optional = true }
 all_asserts = "2.3.0"
 
 [features]
-stable = ["once_cell"]
 json = ["serde", "serde_json"]
 botw-data = ["include-flate", "json"]
 complex = ["roead", "phf"]

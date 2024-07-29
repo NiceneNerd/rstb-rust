@@ -1,10 +1,6 @@
-use std::collections::HashMap;
-#[cfg(not(feature = "stable"))]
-use std::sync::LazyLock;
+use std::{collections::HashMap, sync::LazyLock};
 
 use include_flate::flate;
-#[cfg(feature = "stable")]
-use once_cell::sync::Lazy as LazyLock;
 use serde_json::Value;
 
 use crate::{Endian, ResourceSizeTable, CRC32};
