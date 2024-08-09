@@ -678,18 +678,51 @@ mod tests {
     #[test]
     fn test_all_baiprog() {
         use std::collections::HashSet;
+        use dirs2;
+        use ryml::Tree;
+        use roead::{aamp::ParameterIO, sarc};
 
         use glob::glob;
-        use roead::{aamp::ParameterIO, sarc};
 
         use crate::ResourceSizeTable;
         let mut result: HashSet<String> = HashSet::new();
 
-        let root = "E:/Users/chodn/Documents/ISOs - WiiU/The Legend of Zelda Breath of the Wild \
-                    (UPDATE DATA) (v208) (USA)/content";
-        let rstb_path = root.to_owned() + "/System/Resource/ResourceSizeTable.product.srsizetable";
-        let rstable = ResourceSizeTable::from_binary(std::fs::read(rstb_path).unwrap()).unwrap();
-        for entry in glob(&(root.to_owned() + "/Actor/Pack/*.sbactorpack")).unwrap() {
+        let settings_path = dirs2::data_dir()
+            .unwrap()
+            .join("ukmm")
+            .join("settings.yml");
+        let settings = Tree::parse(
+                std::fs::read_to_string(settings_path).unwrap()
+            ).unwrap();
+        let profile_node = settings.root_ref()
+            .unwrap()
+            .get("wiiu_config")
+            .unwrap()
+            .get("profile")
+            .unwrap();
+        let profile = profile_node.val().unwrap();
+        let root = dirs2::data_local_dir()
+            .unwrap()
+            .join("ukmm")
+            .join("wiiu")
+            .join("profiles")
+            .join(profile)
+            .join("merged")
+            .join("content");
+        let rstb_path = root
+            .join("System")
+            .join("Resource")
+            .join("ResourceSizeTable.product.srsizetable");
+        let rstable = ResourceSizeTable::from_binary(
+                std::fs::read(rstb_path).unwrap()
+            ).unwrap();
+        for entry in glob(
+                root.join("Actor")
+                    .join("Pack")
+                    .join("*.sbactorpack")
+                    .to_string_lossy()
+                    .as_ref()
+            ).unwrap() {
             match entry {
                 Ok(path) => {
                     let actorname = path.file_stem().unwrap().to_str().unwrap();
@@ -737,18 +770,51 @@ mod tests {
     #[test]
     fn test_all_baslist() {
         use std::collections::HashSet;
+        use dirs2;
+        use ryml::Tree;
+        use roead::{aamp::ParameterIO, sarc};
 
         use glob::glob;
-        use roead::{aamp::ParameterIO, sarc};
 
         use crate::ResourceSizeTable;
         let mut result: HashSet<String> = HashSet::new();
 
-        let root = "E:/Users/chodn/Documents/ISOs - WiiU/The Legend of Zelda Breath of the Wild \
-                    (UPDATE DATA) (v208) (USA)/content";
-        let rstb_path = root.to_owned() + "/System/Resource/ResourceSizeTable.product.srsizetable";
-        let rstable = ResourceSizeTable::from_binary(std::fs::read(rstb_path).unwrap()).unwrap();
-        for entry in glob(&(root.to_owned() + "/Actor/Pack/*.sbactorpack")).unwrap() {
+        let settings_path = dirs2::data_dir()
+            .unwrap()
+            .join("ukmm")
+            .join("settings.yml");
+        let settings = Tree::parse(
+                std::fs::read_to_string(settings_path).unwrap()
+            ).unwrap();
+        let profile_node = settings.root_ref()
+            .unwrap()
+            .get("wiiu_config")
+            .unwrap()
+            .get("profile")
+            .unwrap();
+        let profile = profile_node.val().unwrap();
+        let root = dirs2::data_local_dir()
+            .unwrap()
+            .join("ukmm")
+            .join("wiiu")
+            .join("profiles")
+            .join(profile)
+            .join("merged")
+            .join("content");
+        let rstb_path = root
+            .join("System")
+            .join("Resource")
+            .join("ResourceSizeTable.product.srsizetable");
+        let rstable = ResourceSizeTable::from_binary(
+                std::fs::read(rstb_path).unwrap()
+            ).unwrap();
+        for entry in glob(
+                root.join("Actor")
+                    .join("Pack")
+                    .join("*.sbactorpack")
+                    .to_string_lossy()
+                    .as_ref()
+            ).unwrap() {
             match entry {
                 Ok(path) => {
                     let actorname = path.file_stem().unwrap().to_str().unwrap();
@@ -796,18 +862,51 @@ mod tests {
     #[test]
     fn test_all_bdrop() {
         use std::collections::HashSet;
+        use dirs2;
+        use ryml::Tree;
+        use roead::{aamp::ParameterIO, sarc};
 
         use glob::glob;
-        use roead::{aamp::ParameterIO, sarc};
 
         use crate::ResourceSizeTable;
         let mut result: HashSet<String> = HashSet::new();
 
-        let root = "E:/Users/chodn/Documents/ISOs - WiiU/The Legend of Zelda Breath of the Wild \
-                    (UPDATE DATA) (v208) (USA)/content";
-        let rstb_path = root.to_owned() + "/System/Resource/ResourceSizeTable.product.srsizetable";
-        let rstable = ResourceSizeTable::from_binary(std::fs::read(rstb_path).unwrap()).unwrap();
-        for entry in glob(&(root.to_owned() + "/Actor/Pack/*.sbactorpack")).unwrap() {
+        let settings_path = dirs2::data_dir()
+            .unwrap()
+            .join("ukmm")
+            .join("settings.yml");
+        let settings = Tree::parse(
+                std::fs::read_to_string(settings_path).unwrap()
+            ).unwrap();
+        let profile_node = settings.root_ref()
+            .unwrap()
+            .get("wiiu_config")
+            .unwrap()
+            .get("profile")
+            .unwrap();
+        let profile = profile_node.val().unwrap();
+        let root = dirs2::data_local_dir()
+            .unwrap()
+            .join("ukmm")
+            .join("wiiu")
+            .join("profiles")
+            .join(profile)
+            .join("merged")
+            .join("content");
+        let rstb_path = root
+            .join("System")
+            .join("Resource")
+            .join("ResourceSizeTable.product.srsizetable");
+        let rstable = ResourceSizeTable::from_binary(
+                std::fs::read(rstb_path).unwrap()
+            ).unwrap();
+        for entry in glob(
+                root.join("Actor")
+                    .join("Pack")
+                    .join("*.sbactorpack")
+                    .to_string_lossy()
+                    .as_ref()
+            ).unwrap() {
             match entry {
                 Ok(path) => {
                     let actorname = path.file_stem().unwrap().to_str().unwrap();
@@ -855,18 +954,51 @@ mod tests {
     #[test]
     fn test_all_bgparamlist() {
         use std::collections::HashSet;
+        use dirs2;
+        use ryml::Tree;
+        use roead::{aamp::ParameterIO, sarc};
 
         use glob::glob;
-        use roead::{aamp::ParameterIO, sarc};
 
         use crate::ResourceSizeTable;
         let mut result: HashSet<String> = HashSet::new();
 
-        let root = "E:/Users/chodn/Documents/ISOs - WiiU/The Legend of Zelda Breath of the Wild \
-                    (UPDATE DATA) (v208) (USA)/content";
-        let rstb_path = root.to_owned() + "/System/Resource/ResourceSizeTable.product.srsizetable";
-        let rstable = ResourceSizeTable::from_binary(std::fs::read(rstb_path).unwrap()).unwrap();
-        for entry in glob(&(root.to_owned() + "/Actor/Pack/*.sbactorpack")).unwrap() {
+        let settings_path = dirs2::data_dir()
+            .unwrap()
+            .join("ukmm")
+            .join("settings.yml");
+        let settings = Tree::parse(
+                std::fs::read_to_string(settings_path).unwrap()
+            ).unwrap();
+        let profile_node = settings.root_ref()
+            .unwrap()
+            .get("wiiu_config")
+            .unwrap()
+            .get("profile")
+            .unwrap();
+        let profile = profile_node.val().unwrap();
+        let root = dirs2::data_local_dir()
+            .unwrap()
+            .join("ukmm")
+            .join("wiiu")
+            .join("profiles")
+            .join(profile)
+            .join("merged")
+            .join("content");
+        let rstb_path = root
+            .join("System")
+            .join("Resource")
+            .join("ResourceSizeTable.product.srsizetable");
+        let rstable = ResourceSizeTable::from_binary(
+                std::fs::read(rstb_path).unwrap()
+            ).unwrap();
+        for entry in glob(
+                root.join("Actor")
+                    .join("Pack")
+                    .join("*.sbactorpack")
+                    .to_string_lossy()
+                    .as_ref()
+            ).unwrap() {
             match entry {
                 Ok(path) => {
                     let actorname = path.file_stem().unwrap().to_str().unwrap();
@@ -914,18 +1046,51 @@ mod tests {
     #[test]
     fn test_all_bmodellist() {
         use std::collections::HashSet;
+        use dirs2;
+        use ryml::Tree;
+        use roead::{aamp::ParameterIO, sarc};
 
         use glob::glob;
-        use roead::{aamp::ParameterIO, sarc};
 
         use crate::ResourceSizeTable;
         let mut result: HashSet<String> = HashSet::new();
 
-        let root = "E:/Users/chodn/Documents/ISOs - WiiU/The Legend of Zelda Breath of the Wild \
-                    (UPDATE DATA) (v208) (USA)/content";
-        let rstb_path = root.to_owned() + "/System/Resource/ResourceSizeTable.product.srsizetable";
-        let rstable = ResourceSizeTable::from_binary(std::fs::read(rstb_path).unwrap()).unwrap();
-        for entry in glob(&(root.to_owned() + "/Actor/Pack/*.sbactorpack")).unwrap() {
+        let settings_path = dirs2::data_dir()
+            .unwrap()
+            .join("ukmm")
+            .join("settings.yml");
+        let settings = Tree::parse(
+                std::fs::read_to_string(settings_path).unwrap()
+            ).unwrap();
+        let profile_node = settings.root_ref()
+            .unwrap()
+            .get("wiiu_config")
+            .unwrap()
+            .get("profile")
+            .unwrap();
+        let profile = profile_node.val().unwrap();
+        let root = dirs2::data_local_dir()
+            .unwrap()
+            .join("ukmm")
+            .join("wiiu")
+            .join("profiles")
+            .join(profile)
+            .join("merged")
+            .join("content");
+        let rstb_path = root
+            .join("System")
+            .join("Resource")
+            .join("ResourceSizeTable.product.srsizetable");
+        let rstable = ResourceSizeTable::from_binary(
+                std::fs::read(rstb_path).unwrap()
+            ).unwrap();
+        for entry in glob(
+                root.join("Actor")
+                    .join("Pack")
+                    .join("*.sbactorpack")
+                    .to_string_lossy()
+                    .as_ref()
+            ).unwrap() {
             match entry {
                 Ok(path) => {
                     let actorname = path.file_stem().unwrap().to_str().unwrap();
@@ -973,18 +1138,51 @@ mod tests {
     #[test]
     fn test_all_bphysics() {
         use std::collections::HashSet;
+        use dirs2;
+        use ryml::Tree;
+        use roead::{aamp::ParameterIO, sarc};
 
         use glob::glob;
-        use roead::{aamp::ParameterIO, sarc};
 
         use crate::ResourceSizeTable;
         let mut result: HashSet<String> = HashSet::new();
 
-        let root = "E:/Users/chodn/Documents/ISOs - WiiU/The Legend of Zelda Breath of the Wild \
-                    (UPDATE DATA) (v208) (USA)/content";
-        let rstb_path = root.to_owned() + "/System/Resource/ResourceSizeTable.product.srsizetable";
-        let rstable = ResourceSizeTable::from_binary(std::fs::read(rstb_path).unwrap()).unwrap();
-        for entry in glob(&(root.to_owned() + "/Actor/Pack/*.sbactorpack")).unwrap() {
+        let settings_path = dirs2::data_dir()
+            .unwrap()
+            .join("ukmm")
+            .join("settings.yml");
+        let settings = Tree::parse(
+                std::fs::read_to_string(settings_path).unwrap()
+            ).unwrap();
+        let profile_node = settings.root_ref()
+            .unwrap()
+            .get("wiiu_config")
+            .unwrap()
+            .get("profile")
+            .unwrap();
+        let profile = profile_node.val().unwrap();
+        let root = dirs2::data_local_dir()
+            .unwrap()
+            .join("ukmm")
+            .join("wiiu")
+            .join("profiles")
+            .join(profile)
+            .join("merged")
+            .join("content");
+        let rstb_path = root
+            .join("System")
+            .join("Resource")
+            .join("ResourceSizeTable.product.srsizetable");
+        let rstable = ResourceSizeTable::from_binary(
+                std::fs::read(rstb_path).unwrap()
+            ).unwrap();
+        for entry in glob(
+                root.join("Actor")
+                    .join("Pack")
+                    .join("*.sbactorpack")
+                    .to_string_lossy()
+                    .as_ref()
+            ).unwrap() {
             match entry {
                 Ok(path) => {
                     let actorname = path.file_stem().unwrap().to_str().unwrap();
@@ -1032,18 +1230,51 @@ mod tests {
     #[test]
     fn test_all_brecipe() {
         use std::collections::HashSet;
+        use dirs2;
+        use ryml::Tree;
+        use roead::{aamp::ParameterIO, sarc};
 
         use glob::glob;
-        use roead::{aamp::ParameterIO, sarc};
 
         use crate::ResourceSizeTable;
         let mut result: HashSet<String> = HashSet::new();
 
-        let root = "E:/Users/chodn/Documents/ISOs - WiiU/The Legend of Zelda Breath of the Wild \
-                    (UPDATE DATA) (v208) (USA)/content";
-        let rstb_path = root.to_owned() + "/System/Resource/ResourceSizeTable.product.srsizetable";
-        let rstable = ResourceSizeTable::from_binary(std::fs::read(rstb_path).unwrap()).unwrap();
-        for entry in glob(&(root.to_owned() + "/Actor/Pack/*.sbactorpack")).unwrap() {
+        let settings_path = dirs2::data_dir()
+            .unwrap()
+            .join("ukmm")
+            .join("settings.yml");
+        let settings = Tree::parse(
+                std::fs::read_to_string(settings_path).unwrap()
+            ).unwrap();
+        let profile_node = settings.root_ref()
+            .unwrap()
+            .get("wiiu_config")
+            .unwrap()
+            .get("profile")
+            .unwrap();
+        let profile = profile_node.val().unwrap();
+        let root = dirs2::data_local_dir()
+            .unwrap()
+            .join("ukmm")
+            .join("wiiu")
+            .join("profiles")
+            .join(profile)
+            .join("merged")
+            .join("content");
+        let rstb_path = root
+            .join("System")
+            .join("Resource")
+            .join("ResourceSizeTable.product.srsizetable");
+        let rstable = ResourceSizeTable::from_binary(
+                std::fs::read(rstb_path).unwrap()
+            ).unwrap();
+        for entry in glob(
+                root.join("Actor")
+                    .join("Pack")
+                    .join("*.sbactorpack")
+                    .to_string_lossy()
+                    .as_ref()
+            ).unwrap() {
             match entry {
                 Ok(path) => {
                     let actorname = path.file_stem().unwrap().to_str().unwrap();
@@ -1091,18 +1322,51 @@ mod tests {
     #[test]
     fn test_all_bshop() {
         use std::collections::HashSet;
+        use dirs2;
+        use ryml::Tree;
+        use roead::{aamp::ParameterIO, sarc};
 
         use glob::glob;
-        use roead::{aamp::ParameterIO, sarc};
 
         use crate::ResourceSizeTable;
         let mut result: HashSet<String> = HashSet::new();
 
-        let root = "E:/Users/chodn/Documents/ISOs - WiiU/The Legend of Zelda Breath of the Wild \
-                    (UPDATE DATA) (v208) (USA)/content";
-        let rstb_path = root.to_owned() + "/System/Resource/ResourceSizeTable.product.srsizetable";
-        let rstable = ResourceSizeTable::from_binary(std::fs::read(rstb_path).unwrap()).unwrap();
-        for entry in glob(&(root.to_owned() + "/Actor/Pack/*.sbactorpack")).unwrap() {
+        let settings_path = dirs2::data_dir()
+            .unwrap()
+            .join("ukmm")
+            .join("settings.yml");
+        let settings = Tree::parse(
+                std::fs::read_to_string(settings_path).unwrap()
+            ).unwrap();
+        let profile_node = settings.root_ref()
+            .unwrap()
+            .get("wiiu_config")
+            .unwrap()
+            .get("profile")
+            .unwrap();
+        let profile = profile_node.val().unwrap();
+        let root = dirs2::data_local_dir()
+            .unwrap()
+            .join("ukmm")
+            .join("wiiu")
+            .join("profiles")
+            .join(profile)
+            .join("merged")
+            .join("content");
+        let rstb_path = root
+            .join("System")
+            .join("Resource")
+            .join("ResourceSizeTable.product.srsizetable");
+        let rstable = ResourceSizeTable::from_binary(
+                std::fs::read(rstb_path).unwrap()
+            ).unwrap();
+        for entry in glob(
+                root.join("Actor")
+                    .join("Pack")
+                    .join("*.sbactorpack")
+                    .to_string_lossy()
+                    .as_ref()
+            ).unwrap() {
             match entry {
                 Ok(path) => {
                     let actorname = path.file_stem().unwrap().to_str().unwrap();
