@@ -1,16 +1,24 @@
 pub mod baiprog;
+pub mod baniminfo;
 pub mod baslist;
+pub mod bchemical;
 pub mod bdrop;
 pub mod bgparamlist;
+pub mod blifecondition;
 pub mod bmodellist;
 pub mod bphysics;
+pub mod bphyssb;
 pub mod brecipe;
+pub mod brgconfiglist;
 pub mod bshop;
 pub mod bxml;
 pub mod cpp_classes;
 
-const PARSE_CONST_WIIU: u32 = 0xe4;
-const PARSE_CONST_NX: u32 = 0x168;
+const PARSE_CONST_WIIU: usize = 0xe4;
+const PARSE_CONST_NX: usize = 0x168;
+
+const ITER_CONST_WIIU: usize = 0x10;
+const ITER_CONST_NX: usize = 0x20;
 
 // Leaving this here in case I need it for some reason in the future
 #[allow(dead_code)]

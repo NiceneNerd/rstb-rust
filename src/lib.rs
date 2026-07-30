@@ -229,7 +229,7 @@ impl ResourceSizeTable {
     }
 
     /// Gets an interator over all RSTB entries across both the CRC and name tables.
-    pub fn iter(&self) -> impl Iterator<Item = (ResourceKey, &u32)> {
+    pub fn iter(&self) -> impl Iterator<Item = (ResourceKey<'_>, &u32)> {
         self.crc_map
             .iter()
             .map(|(k, v)| (ResourceKey::Hash(*k), v))
@@ -241,7 +241,7 @@ impl ResourceSizeTable {
     }
 
     /// Gets a mutable interator over all RSTB entries across both the CRC and name tables.
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = (ResourceKey, &mut u32)> {
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = (ResourceKey<'_>, &mut u32)> {
         self.crc_map
             .iter_mut()
             .map(|(k, v)| (ResourceKey::Hash(*k), v))
