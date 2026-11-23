@@ -6,18 +6,11 @@ impl ResourceSizeTable {
     /// Reads an RSTB from a byte slice. Will automatically decompress yaz0
     /// data if the `yaz0` feature is enabled.
     pub fn from_binary<B: Borrow<[u8]>>(bytes: B) -> Result<Self> {
-        #[cfg(feature = "yaz0")]
         let bytes = if &bytes.borrow()[0..4] == b"Yaz0" {
             let mut reader = std::io::Cursor::new(bytes.borrow());
             std::borrow::Cow::Owned(yaz0::Yaz0Archive::new(&mut reader)?.decompress()?)
         } else {
             bytes.borrow().into()
-        };
-        #[cfg(not(feature = "yaz0"))]
-        let bytes = if &bytes.borrow()[0..4] == b"Yaz0" {
-            return Err(RstbError::FeatureError("yaz0".to_owned()));
-        } else {
-            bytes.borrow()
         };
         let mut endian = Endian::Big;
         let has_magic = &bytes[0..4] == b"RSTB";
@@ -86,12 +79,10 @@ impl ResourceSizeTable {
         buf
     }
 
-    /// *Requires the `yaz0` feature.*
     /// Writes the RSTB to an in-memory buffer using the specified endianness
     /// with yaz0 compression. **Note:** The yaz0 implementation used is
     /// actually really slow, so it's better to compress on your own if it
     /// suits your purpose.
-    #[cfg(feature = "yaz0")]
     pub fn to_compressed_binary(&self, endian: Endian) -> Vec<u8> {
         let mut buf: Vec<u8> =
             Vec::with_capacity(12 + (self.crc_map.len() * 8) + (self.name_map.len() * 132));
@@ -134,7 +125,6 @@ fn read_name(slice: &[u8]) -> Result<FixedString> {
     }
 }
 
-#[cfg(feature = "yaz0")]
 #[cfg(test)]
 mod tests {
     use crate::ResourceSizeTable;

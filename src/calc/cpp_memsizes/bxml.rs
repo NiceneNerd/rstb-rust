@@ -2,21 +2,29 @@ use roead::aamp::ParameterIO;
 
 use crate::Endian;
 
-const CLASS_SIZE_WIIU: usize = 0x4a8;
-const CLASS_SIZE_NX: usize = 0x778;
+const TAG_SIZE: usize = size_of::<u32>();
 
-const OVERHEAD_WIIU: usize = 0x64;
-const OVERHEAD_NX: usize = 0x44;
-const TAG_SIZE: usize = std::mem::size_of::<u32>();
+const BASE_OVERHEAD_WIIU: usize = 0x34;
+const BASE_OVERHEAD_NX: usize = 0x20;
 
 pub fn parse_size(bytes: &[u8], endian: Endian) -> Option<u32> {
+    if bytes.len()  == 0 { return None; }
+
     let mut total_size: usize = match endian {
-        Endian::Big => super::PARSE_CONST_WIIU as usize + CLASS_SIZE_WIIU + OVERHEAD_WIIU,
-        Endian::Little => super::PARSE_CONST_NX as usize + CLASS_SIZE_NX + OVERHEAD_NX,
+        Endian::Big => BASE_OVERHEAD_WIIU,
+        Endian::Little => BASE_OVERHEAD_NX,
     };
     let a = ParameterIO::from_binary(bytes).ok()?;
+    let iter_const = match endian {
+        Endian::Big => super::ITER_CONST_WIIU,
+        Endian::Little => super::ITER_CONST_NX,
+    };
 
     if let Some(tags) = a.param_root.objects.get("Tags") {
+        let tags_num = tags.len();
+        if tags_num > 0 {
+            total_size += iter_const;
+        }
         total_size += TAG_SIZE * tags.len();
     }
 
